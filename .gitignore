@@ -1,0 +1,5 @@
+composer.lock
+*~
+vendor/
+output/
+.phpunit.cache/

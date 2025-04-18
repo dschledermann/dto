@@ -1,0 +1,19 @@
+{
+    "name": "dschledermann/dto",
+    "description": "Lightweight DTO system to fetch data from a PDO in a type safe manner",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Dschledermann\\Dto\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Daniel Schledermann",
+            "email": "daniel@schledermann.net"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
+    }
+}
