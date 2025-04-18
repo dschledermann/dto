@@ -118,7 +118,7 @@ final class Connection
 
         $id = $obj->$idProperty;
 
-        $fields = $mapper->makeAssocFromObject($obj);
+        $fields = $mapper->intoAssoc($obj);
 
         if ($id) {
             $sql = self::makeUpdate($mapper, $this->sqlMode);

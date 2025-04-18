@@ -13,7 +13,6 @@ final class Rename implements KeyMapperInterface
         private string $forcedName,
     ) {}
 
-
     public function getFieldName(string $fieldName): string
     {
         return $this->forcedName;

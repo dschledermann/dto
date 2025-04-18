@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Dschledermann\Dto\Mapper\Value\FromPhp;
+namespace Dschledermann\Dto\Mapper\Value;
 
 interface FromPhpInterface
 {

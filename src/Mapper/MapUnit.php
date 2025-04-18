@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Dschledermann\Dto\Mapper;
 
-use Dschledermann\Dto\Mapper\Value\FromPhp\FromPhpInterface;
-use Dschledermann\Dto\Mapper\Value\IntoPhp\IntoPhpInterface;
+use Dschledermann\Dto\Mapper\Value\FromPhpInterface;
+use Dschledermann\Dto\Mapper\Value\IntoPhpInterface;
 use ReflectionProperty;
 
 final class MapUnit

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Dschledermann\Dto\Mapper\Value\IntoPhp;
+namespace Dschledermann\Dto\Mapper\Value;
 
 interface IntoPhpInterface
 {

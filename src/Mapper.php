@@ -7,8 +7,10 @@ namespace Dschledermann\Dto;
 use Dschledermann\Dto\Mapper\Ignore;
 use Dschledermann\Dto\Mapper\Key\KeyMapperInterface;
 use Dschledermann\Dto\Mapper\Key\ToSnakeCase;
+use Dschledermann\Dto\Mapper\MapUnit;
 use Dschledermann\Dto\Mapper\UniqueIdentifier;
-use Dschledermann\Dto\Mapper\Value\FromPhp\FromPhpInterface;
+use Dschledermann\Dto\Mapper\Value\FromPhpInterface;
+use Dschledermann\Dto\Mapper\Value\IntoPhpInterface;
 use ReflectionClass;
 use ReflectionProperty;
 
@@ -20,9 +22,8 @@ final class Mapper
     private function __construct(
         private ReflectionClass $reflector,
         private string $tableName,
-        private ?string $uniqueField,
-        private ?string $uniqueProperty,
-        /** @var ReflectionProperty[] */
+        private ?MapUnit $uniqueProperty,
+        /** @var MapUnit[] */
         private array $propertyMap,
     ) {}
 
@@ -54,37 +55,48 @@ final class Mapper
         $tableName = $tableNameRemapper->getFieldName($tableName);
 
         $propertyMap = [];
-        $uniqueField = null;
         $uniqueProperty = null;
+
         foreach ($reflector->getProperties() as $property) {
             $hasIgnore = $property->getAttributes(Ignore::class);
             if ($hasIgnore) {
                 continue;
             }
 
-            $fieldNameMapper = $defaultMapper;
+            $propertyName = $property->getName();
+
+            $mapUnit = new MapUnit(
+                $defaultMapper->getFieldName($propertyName),
+                $propertyName,
+                $property,
+            );
+
+            $propertyMap[] = $mapUnit;
+
             foreach($property->getAttributes() as $attribute) {
                 $instance = $attribute->newInstance();
+
                 if ($instance instanceof KeyMapperInterface) {
-                    $fieldNameMapper = $instance;
+                    $mapUnit->keyName = $instance->getFieldName($propertyName);
+                }
+
+                if ($instance instanceof IntoPhpInterface) {
+                    $mapUnit->intoPhp = $instance;
+                }
+
+                if ($instance instanceof FromPhpInterface) {
+                    $mapUnit->fromPhp = $instance;
                 }
             }
 
-            $fieldName = $fieldNameMapper->getFieldName($property->getName());
-
-            $isUniqueField = $property->getAttributes(UniqueIdentifier::class);
-            if ($isUniqueField) {
-                $uniqueProperty = $property->getName();
-                $uniqueField = $fieldName;
+            if ($property->getAttributes(UniqueIdentifier::class)) {
+                $uniqueProperty = $mapUnit;
             }
-
-            $propertyMap[$fieldName] = $property;
         }
 
         return new Mapper(
             $reflector,
             $tableName,
-            $uniqueField,
             $uniqueProperty,
             $propertyMap,
         );
@@ -92,12 +104,20 @@ final class Mapper
 
     public function getUniqueField(): ?string
     {
-        return $this->uniqueField;
+        if ($this->uniqueProperty) {
+            return $this->uniqueProperty->keyName;
+        } else {
+            return null;
+        }
     }
 
     public function getUniqueProperty(): ?string
     {
-        return $this->uniqueProperty;
+        if ($this->uniqueProperty) {
+            return $this->uniqueProperty->propertyName;
+        } else {
+            return null;
+        }
     }
 
     public function getTableName(): string
@@ -107,28 +127,39 @@ final class Mapper
 
     public function getFieldNames(): array
     {
-        return array_keys($this->propertyMap);
+        $fieldNames = [];
+
+        foreach ($this->propertyMap as $propertyUnit) {
+            $fieldNames[] = $propertyUnit->keyName;
+        }
+        return $fieldNames;
     }
 
     /**
      * @param array $values
      * @return T
      */
-    public function makeFromAssoc(array $values): object
+    public function fromAssoc(array $values): object
     {
         $instance = $this->reflector->newInstanceWithoutConstructor();
 
-        foreach ($this->propertyMap as $key => $property) {
-            if (array_key_exists($key, $values)) {
-                $property->setValue($instance, $values[$key]);
+        foreach ($this->propertyMap as $propertyUnit) {
+            if (array_key_exists($propertyUnit->keyName, $values)) {
+
+                $value = $values[$propertyUnit->keyName];
+                if ($intoPhp = $propertyUnit->intoPhp) {
+                    $value = $intoPhp->intoPhpValue($value);
+                }
+                
+                $propertyUnit->property->setValue($instance, $value);
             } else {
                 // Missing field? Is it nullable?
-                if ($property->getType()->allowsNull()) {
-                    $property->setValue($instance, null);
+                if ($propertyUnit->property->getType()->allowsNull()) {
+                    $propertyUnit->property->setValue($instance, null);
                 } else {
                     throw new DtoException(sprintf(
                         '[eiiaNg9ph] The field %s was missing from the record set then creating a %s',
-                        $key,
+                        $propertyUnit->keyName,
                         $this->reflector->getName(),
                     ));
                 }
@@ -138,11 +169,11 @@ final class Mapper
         return $instance;
     }
 
-    public function makeAssocFromObject(object $obj): array
+    public function intoAssoc(object $obj): array
     {
         $result = [];
-        foreach ($this->propertyMap as $key => $property) {
-            $result[$key] = $property->getValue($obj);
+        foreach ($this->propertyMap as $propertyUnit) {
+            $result[$propertyUnit->keyName] = $propertyUnit->property->getValue($obj);
         }
         return $result;
     }
@@ -151,5 +182,5 @@ final class Mapper
     {
         foreach($property->getAttributes() as $attribute) {
         }
-    }        
+    }
 }

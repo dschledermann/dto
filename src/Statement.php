@@ -33,7 +33,7 @@ final class Statement
     public function fetch(): ?object
     {
         if ($row = $this->stmt->fetch()) {
-            return $this->mapper->makeFromAssoc($row);
+            return $this->mapper->fromAssoc($row);
         } else {
             return null;
         }
@@ -48,7 +48,7 @@ final class Statement
         $values = [];
 
         foreach ($rows as $row) {
-            $values[] = $this->mapper->makeFromAssoc($row);
+            $values[] = $this->mapper->fromAssoc($row);
         }
 
         return $values;

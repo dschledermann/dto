@@ -36,7 +36,7 @@ class MapperTest extends TestCase
             'unrelated_field' => 'Hej, hej, Martin og Ketil',
         ];
 
-        $dto = $mapper->makeFromAssoc($row);
+        $dto = $mapper->fromAssoc($row);
 
         $this->assertSame(get_class($dto), SimpleDto::class);
         $this->assertSame('Hej, hej, Dr. Pjuskebusk', $dto->field);
@@ -48,7 +48,7 @@ class MapperTest extends TestCase
         $this->expectExceptionMessage('[eiiaNg9ph]');
         $mapper = Mapper::create(SimpleDto::class);
         $arr = ['field' => 'mememem'];
-        $mapper->makeFromAssoc($arr);
+        $mapper->fromAssoc($arr);
     }
 }
 
