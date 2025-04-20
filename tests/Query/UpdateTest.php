@@ -6,7 +6,7 @@ namespace Tests\Dschledermann\Dto\Query;
 
 use Dschledermann\Dto\Mapper;
 use Dschledermann\Dto\Mapper\Ignore;
-use Dschledermann\Dto\Mapper\Key\Rename;
+use Dschledermann\Dto\Mapper\Key\SetSqlName;
 use Dschledermann\Dto\Mapper\UniqueIdentifier;
 use Dschledermann\Dto\Query\MakeUpdateTrait;
 use Dschledermann\Dto\SqlMode;
@@ -45,7 +45,7 @@ final class UpdateRecord
     public ?int $id;
     public string $field1;
     public string $extraField;
-    #[Rename("rename_field")]
+    #[SetSqlName("rename_field")]
     public string $otherField;
     #[Ignore]
     public string $ignoredField;

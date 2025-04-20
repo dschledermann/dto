@@ -6,7 +6,7 @@ namespace Tests\Dschledermann\Dto;
 
 use Dschledermann\Dto\Mapper;
 use Dschledermann\Dto\Mapper\Ignore;
-use Dschledermann\Dto\Mapper\Key\Rename;
+use Dschledermann\Dto\Mapper\Key\SetSqlName;
 use Dschledermann\Dto\Mapper\UniqueIdentifier;
 use PHPUnit\Framework\TestCase;
 
@@ -58,14 +58,14 @@ class SimpleDto
     public float $anotherField;
 }
 
-#[Rename("another_table_name")]
+#[SetSqlName("another_table_name")]
 class TestDto
 {
     #[UniqueIdentifier]
     public ?int $id;
     public string $name;
     public string $someField;
-    #[Rename("new_name")]
+    #[SetSqlName("new_name")]
     public float $renamedField;
     #[Ignore]
     public int $ignoredField;

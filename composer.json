@@ -2,6 +2,7 @@
     "name": "dschledermann/dto",
     "description": "Lightweight DTO system to fetch data from a PDO in a type safe manner",
     "type": "library",
+    "license": "GPL-3.0-or-later",
     "autoload": {
         "psr-4": {
             "Dschledermann\\Dto\\": "src/"

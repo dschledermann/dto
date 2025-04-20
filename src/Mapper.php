@@ -12,13 +12,18 @@ use Dschledermann\Dto\Mapper\UniqueIdentifier;
 use Dschledermann\Dto\Mapper\Value\FromPhpInterface;
 use Dschledermann\Dto\Mapper\Value\IntoPhpInterface;
 use ReflectionClass;
-use ReflectionProperty;
 
 /**
  * @template T
  */
 final class Mapper
 {
+    /**
+     * @param Reflectionclass<T>  $reflector
+     * @param string              $table
+     * @param ?MapUnit            $uniqueProperty
+     * @param MapUnit[]           $propertyMap
+     */
     private function __construct(
         private ReflectionClass $reflector,
         private string $tableName,
@@ -127,15 +132,12 @@ final class Mapper
 
     public function getFieldNames(): array
     {
-        $fieldNames = [];
-
-        foreach ($this->propertyMap as $propertyUnit) {
-            $fieldNames[] = $propertyUnit->keyName;
-        }
-        return $fieldNames;
+        return array_map(fn($e) => $e->keyName, $this->propertyMap);
     }
 
     /**
+     * Convert assoc array into object of type T.
+     *
      * @param array $values
      * @return T
      */
@@ -150,7 +152,7 @@ final class Mapper
                 if ($intoPhp = $propertyUnit->intoPhp) {
                     $value = $intoPhp->intoPhpValue($value);
                 }
-                
+
                 $propertyUnit->property->setValue($instance, $value);
             } else {
                 // Missing field? Is it nullable?
@@ -169,18 +171,23 @@ final class Mapper
         return $instance;
     }
 
+    /**
+     * Convert object of type T into assoc array.
+     *
+     * @param  T  $obj
+     * @return array
+     */
     public function intoAssoc(object $obj): array
     {
         $result = [];
         foreach ($this->propertyMap as $propertyUnit) {
-            $result[$propertyUnit->keyName] = $propertyUnit->property->getValue($obj);
+            $value = $propertyUnit->property->getValue($obj);
+
+            if ($fromPhp = $propertyUnit->fromPhp) {
+                $value = $fromPhp->fromPhpValue($value);
+            }
+            $result[$propertyUnit->keyName] = $value;
         }
         return $result;
-    }
-
-    private function getFromPhp(ReflectionProperty $property): ?FromPhpInterface
-    {
-        foreach($property->getAttributes() as $attribute) {
-        }
     }
 }

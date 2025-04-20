@@ -7,7 +7,7 @@ namespace Dschledermann\Dto\Mapper\Key;
 use Attribute;
 
 #[Attribute]
-final class Rename implements KeyMapperInterface
+final class SetSqlName implements KeyMapperInterface
 {
     public function __construct(
         private string $forcedName,

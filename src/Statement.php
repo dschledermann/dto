@@ -14,17 +14,27 @@ final class Statement
     /**
      * @template T
      * @param PDOStatement $stmt
-     * @param Mapper<T> $mapper
+     * @param class-string<T>  $targetClass
+     * @param MapperList $mapperList
      * @return Statement<T>
      */
     public function __construct(
         private PDOStatement $stmt,
-        private Mapper $mapper,
+        private string $targetClass,
+        private MapperList $mapperList,
     ) {}
 
-    public function execute(array $params): void
+    /**
+     * @param array|object $params  Parameters for the query execution.
+     * @return bool
+     */
+    public function execute(array|object $params): bool
     {
-        $this->stmt->execute($params);
+        if (is_object($params)) {
+            $mapper = $this->mapperList->getMapper(get_class($params));
+            $params = $mapper->intoAssoc($params);
+        }
+        return $this->stmt->execute($params);
     }
 
     /**
@@ -33,7 +43,10 @@ final class Statement
     public function fetch(): ?object
     {
         if ($row = $this->stmt->fetch()) {
-            return $this->mapper->fromAssoc($row);
+            return $this
+                ->mapperList
+                ->getMapper($this->targetClass)
+                ->fromAssoc($row);
         } else {
             return null;
         }
@@ -46,9 +59,10 @@ final class Statement
     {
         $rows = $this->stmt->fetchAll();
         $values = [];
+        $mapper = $this->mapperList->getMapper($this->targetClass);
 
         foreach ($rows as $row) {
-            $values[] = $this->mapper->fromAssoc($row);
+            $values[] = $mapper->fromAssoc($row);
         }
 
         return $values;

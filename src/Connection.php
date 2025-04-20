@@ -11,7 +11,6 @@ use PDO;
 
 final class Connection
 {
-    use GetMapperTrait;
     use MakeInsertTrait;
     use MakeSelectOneTrait;
     use MakeUpdateTrait;
@@ -19,6 +18,7 @@ final class Connection
     private function __construct(
         private PDO $pdo,
         private SqlMode $sqlMode,
+        private MapperList $mapperList,
     ) {}
 
     public static function createFromPdo(
@@ -26,7 +26,7 @@ final class Connection
         SqlMode $sqlMode = SqlMode::MySQL,
     ): Connection
     {
-        return new Connection($pdo);
+        return new Connection($pdo, $sqlMode, new MapperList());
     }
 
     public static function createFromEnv(
@@ -52,7 +52,7 @@ final class Connection
             $sqlMode = SqlMode::ANSI;
         }
 
-        return new Connection($pdo, $sqlMode);
+        return new Connection($pdo, $sqlMode, new MapperList());
     }
 
     /**
@@ -78,18 +78,18 @@ final class Connection
     {
         $stmt = $this->pdo->prepare($sql);
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        return new Statement($stmt, self::getMapper($targetClass));
+        return new Statement($stmt, $targetClass, $this->mapperList);
     }
 
     /**
      * @template T
-     * @param mixed             $id             Unique id for record
-     * @param class-string<T>   $targetclass    DTO class
+     * @param mixed $id             Unique id for record
+     * @param class-string<T> $targetclass    DTO class
      * @return Statement<T>
      */
     public function get(mixed $id, string $targetClass): Statement
     {
-        $mapper = self::getMapper($targetClass);
+        $mapper = $this->mapperList->getMapper($targetClass);
         $sql = self::makeSelectOne($mapper, $this->sqlMode);
         $stmt = $this->prepare($sql, $targetClass);
         $stmt->execute([$id]);
@@ -104,7 +104,7 @@ final class Connection
     public function persist(object $obj)
     {
         $className = get_class($obj);
-        $mapper = self::getMapper($className);
+        $mapper = $this->mapperList->getMapper($className);
 
         if (is_null($mapper->getUniqueField())) {
             throw new DtoException(sprintf(
@@ -120,15 +120,15 @@ final class Connection
 
         $fields = $mapper->intoAssoc($obj);
 
+        unset($fields[$idField]);
         if ($id) {
             $sql = self::makeUpdate($mapper, $this->sqlMode);
-            unset($fields[$idField]);
             $fields[$idField] = $id;
         } else {
             $sql = self::makeInsert($mapper, $this->sqlMode);
         }
 
-        $stmt = $this->prepare($sql);
+        $stmt = $this->prepare($sql, $className);
         $stmt->execute(array_values($fields));
         return $stmt;
     }
