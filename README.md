@@ -36,10 +36,10 @@ Example:
 final class Person
 {
     #[UniqueIdentifier]
-	public ?int $id;
-	public string $name;
-	public string $address;
-	publuc int $age;
+    public ?int $id;
+    public string $name;
+    public string $address;
+    public int $age;
 }
 ```
 
@@ -80,16 +80,16 @@ Consider this code:
 final class UserResult
 {
     public string $username;
-	public string $email;
-	public string $countryName;
+    public string $email;
+    public string $countryName;
 }
 
 $stmt = $connection->prepare(
     "SELECT u.username, u.email, c.country_name
-	 FROM user AS u
-	 JOIN country AS c ON u.country_id = c.id
-	 WHERE u.age > ?",
-	UserResult::class,
+     FROM user AS u
+     JOIN country AS c ON u.country_id = c.id
+     WHERE u.age > ?",
+    UserResult::class,
 );
 
 $stmt->execute([$age]);
@@ -107,9 +107,9 @@ final class User
 {
     #[UniqueIdentifier]
     public ?int $id;
-	public string $username;
-	public string $displayName;
-	public int $loginCount;
+    public string $username;
+    public string $displayName;
+    public int $loginCount;
 }
 ```
 
@@ -141,8 +141,8 @@ final class BlogPost
 {
     #[UniqueIdentifier]
     public ?int $id;
-	public string $headerText;
-	public string $bodySection;
+    public string $headerText;
+    public string $bodySection;
 }
 ```
 
@@ -164,10 +164,10 @@ final class BlogPost
 {
     #[UniqueIdentifier]
     public ?int $id;
-	#[ToLowerCase]
-	public string $headerText;
-	#[SetSqlName("maintext")]
-	public string $bodySection;
+    #[ToLowerCase]
+    public string $headerText;
+    #[SetSqlName("maintext")]
+    public string $bodySection;
 }
 ```
 
