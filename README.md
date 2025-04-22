@@ -1,12 +1,13 @@
 
 # DTO
-This package is primarily a simple proxy for PDO that will help you retrieve database results in a typesafe manner.
+This package is designed to be a simple proxy for PDO that will help you retrieve database results in a type safe manner.
+It is not a full abstraction of SQL, or a full ORM or anything like that.
 
 ## Why do this?
 You can think of it as using PDO::FETCH_CLASS, but it can be configured, as you can add filters, rename field and have value converters.
 There are also some helper methods for doing simple SELECTs by primary id, INSERT's and UPDATE's, but the goal of the package is *not* to help you write SQL.
 Nor is the goal to reflect the database structure as models in PHP.
-The primary goal is only to have properly structured types returned for your queries instead of dumb associative arrays.
+The primary goal is only to have properly structured types returned from your queries instead of dumb associative arrays.
 
 ## Usage
 ### Making a connection
@@ -67,10 +68,12 @@ You can also do a prepare for a query.
 ```php
 $stmt = $connection->prepare("SELECT * FROM person WHERE age = ?", Person::class);
 $stmt->execute([49]);
+
+$persons = $stmt->fetchAll();
 ```
 
 ### JOINs and field from multiple tables
-There's no problem in defining a result class spanning fields from multiple tables.
+There's no problem in defining a result class spanning fields from multiple tables or just a subset of fields from one table.
 Consider this code:
 
 ```php
@@ -171,20 +174,32 @@ final class BlogPost
 .. where $headerText will be translated into "headertext" and $bodySection into "maintext".
 
 If you need something else, feel free to implement the KeyMapperInterface in your own type and make it an attribute.
+KeyMapperInterface attributes work both for class names and property names.
 
 ## FAQ
 
-### Q: Why not just use Doctrine?
-__A__: Well, you can. Doctrine is aimed at supporting the entire model of your database. DTO makes no such assumption. This is only to map your results to well defined types, nothing more. Mapping your entire domain from database into a complete consistent model in a legacy project can be quite the undertaking.
+#### Q: Why not just use Doctrine?
+__A__: Doctrine is aimed at supporting the entire model of your database and do so with each entity mapping to one corresponding table.
+DTO makes no such assumption.
+This is only to map your *results* to well defined types, nothing more.
+Mapping your entire domain from database into a complete consistent model in a legacy project can be quite the undertaking.
 
-### Q: Can you do relations?
+#### Q: Can I do relations?
 __A__: I suppose you could with the IntoPhpInterface, but I'd recommend against it.
-There's no need for your result types to map exactly and exclusively onto single tables.
+There's no need for your result types to map exactly and exclusively onto single table.
 You can do partial tables or do all relevant fields from a JOIN-expression.
 In most cases, just JOIN the tables you need and design a DTO for that particular result.
 Your queries will be lean and your code will have fewer couplings.
 
-### Q: Will there be a query builder?
+#### Q: Will there be a query builder?
 __A__: No. I consider query builders harmful.
-If you need something complex, you are better served with writing the SQL yourself.
-The query builder will add extra coupling to your code and the query is not immediately readable.
+All the cases that can resonably be covered by simple query building is already implemented in the Connection::get() and Connection::persist() methods.
+Anything more complex is bound to reduce readability.
+My position is that SQL is the best way to communicate with an SQL-database.
+If you need something complex, you are better served with writing the SQL directly and not using some OOP on top of SQL.
+
+#### Q: How should I structure my result type code?
+__A__: I would abstain from the temptation of building a centralized set of models or result types.
+At least not in all cases.
+Yes, some queries may have overlapping result types, but if you are using the same classes across many parts of your code, you are increasing coupling and reducing locality, making it harder to maintain.
+Instead, in most cases, you are better served by grouping the DTO structures near the service or controller that uses them.

@@ -6,6 +6,10 @@ namespace Dschledermann\Dto\Mapper\Value;
 
 use Attribute;
 
+/**
+ * This value mapper will pack an IP-address in an efficient int in the database
+ * and unpack it into a string in PHP.
+ */
 #[Attribute]
 final class CastIp2Long implements FromPhpInterface, IntoPhpInterface
 {

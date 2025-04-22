@@ -7,6 +7,10 @@ namespace Dschledermann\Dto\Mapper\Value;
 use Attribute;
 use DateTimeImmutable;
 
+/**
+ * You can use this value mapper if your field is a datatime
+ * It will become a datetimeimmutable in PHP
+ */
 #[Attribute]
 final class CastDateTimeImmutable implements FromPhpInterface, IntoPhpInterface
 {
