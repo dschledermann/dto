@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Dschledermann\Dto;
 
+use Dschledermann\Dto\DefaultTypes\NumRecords;
+use Dschledermann\Dto\Query\MakeCountByIdColumnTrait;
 use Dschledermann\Dto\Query\MakeInsertTrait;
 use Dschledermann\Dto\Query\MakeSelectOneTrait;
 use Dschledermann\Dto\Query\MakeUpdateTrait;
@@ -11,9 +13,13 @@ use PDO;
 
 final class Connection
 {
+    use MakeCountByIdColumnTrait;
     use MakeInsertTrait;
     use MakeSelectOneTrait;
     use MakeUpdateTrait;
+
+    /** @var array<string, Statement> */
+    private array $prepareStore = [];
 
     private function __construct(
         private PDO $pdo,
@@ -76,12 +82,24 @@ final class Connection
      */
     public function prepare(string $sql, string $targetClass): Statement
     {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
-        return new Statement($stmt, $targetClass, $this->mapperList);
+        $key = md5($targetClass . $sql);
+
+        if (!array_key_exists($key, $this->prepareStore)) {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->setFetchMode(PDO::FETCH_ASSOC);
+            $this->prepareStore[$key] = new Statement(
+                $stmt,
+                $targetClass,
+                $this->mapperList,
+            );
+        }
+
+        return $this->prepareStore[$key];
     }
 
     /**
+     * Get a DTO instance for DTO with a defined id-column
+     *
      * @template T
      * @param mixed $id             Unique id for record
      * @param class-string<T> $targetclass    DTO class
@@ -97,12 +115,16 @@ final class Connection
     }
 
     /**
+     * Persist a DTO with a defined id-column
+     * This method can deduce if an UPDATE or an INSERT is needed.
+     *
      * @template T
      * @param    T             $obj
      * @return   Statement<T>
      */
     public function persist(object $obj)
     {
+        /** @var class-string<T> */
         $className = get_class($obj);
         $mapper = $this->mapperList->getMapper($className);
 
@@ -120,16 +142,58 @@ final class Connection
 
         $fields = $mapper->intoAssoc($obj);
 
-        unset($fields[$idField]);
+        // Is the id set?
         if ($id) {
-            $sql = self::makeUpdate($mapper, $this->sqlMode);
-            $fields[$idField] = $id;
+            // We have an id supplied
+            $checkExistsSql = self::makeCountByIdColumn($mapper, $this->sqlMode);
+            $stmt = $this->prepare($checkExistsSql, NumRecords::class);
+            $stmt->execute([$id]);
+            $numRecords = $stmt->fetch();
+
+            if ($numRecords->numRecords > 0) {
+                // We have a record.
+                // Moving the id field to the end.
+                unset($fields[$idField]);
+                $fields[$idField] = $id;
+
+                // and construct as an update
+                $sql = self::makeUpdate($mapper, $this->sqlMode);
+            } else {
+                // We don't have a record already, but an id is set.
+                // The scenario is likely that we have an uuid or something similar
+                // as the primary id.
+                // Construct as an insert.
+                $sql = self::makeInsert($mapper, $this->sqlMode);
+            }
         } else {
+            // If not, then we are inserting.
+            // The id field is NULL, so we have to remove it from the record to allow
+            // auto increment to do it's work.
+            unset($fields[$idField]);
             $sql = self::makeInsert($mapper, $this->sqlMode);
         }
 
         $stmt = $this->prepare($sql, $className);
         $stmt->execute(array_values($fields));
+        return $stmt;
+    }
+
+    /**
+     * Insert a DTO that is assumed to reflect a table.
+     * Most often a DTO that completely reflect a single table, you should consider
+     * use the Connection::persist()-method instead.
+     *
+     * @template T
+     * @param    T             $obj
+     * @return   Statement<T>
+     */
+    public function insert(object $obj): Statement
+    {
+        /** @var class-string<T> */
+        $className = get_class($obj);
+        $mapper = $this->mapperList->getMapper($className);
+        $stmt = $this->prepare(self::makeInsert($mapper, $this->sqlMode), $className);
+        $stmt->execute($mapper->intoAssoc($obj));
         return $stmt;
     }
 

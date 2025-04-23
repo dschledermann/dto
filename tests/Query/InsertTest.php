@@ -22,13 +22,6 @@ class InsertTest extends TestCase
             self::makeInsert($mapper, SqlMode::MySQL),
         );
     }
-
-    public function testMissingId(): void
-    {
-        $mapper = Mapper::create(InsertWithOutId::class);
-        $this->expectExceptionMessage('[Aengeish3]');
-        self::makeInsert($mapper, SqlMode::MySQL);
-    }
 }
 
 final class InsertRecord

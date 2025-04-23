@@ -17,13 +17,6 @@ trait MakeInsertTrait
         $fields = $mapper->getFieldNames();
         $idField = $mapper->getUniqueField();
 
-        if (!$idField) {
-            throw new DtoException(sprintf(
-                "[Aengeish3] No unique id field for %s. Cannot construct SQL.",
-                $mapper->getTableName(),
-            ));
-        }
-
         foreach ($fields as $i => $field) {
             if ($field === $idField) {
                 unset($fields[$i]);

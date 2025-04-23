@@ -6,6 +6,7 @@ namespace Tests\Dschledermann\Dto;
 
 use Dschledermann\Dto\Connection;
 use Dschledermann\Dto\Mapper\UniqueIdentifier;
+use Dschledermann\Dto\DefaultTypes\NumRecords;
 use PDO;
 use PDOStatement;
 use PHPUnit\Framework\TestCase;
@@ -121,8 +122,18 @@ class ConnectionTest extends TestCase
 
     public function testPersistWithId(): void
     {
-        $pdoStatement = $this->createMock(PDOStatement::class);
-        $pdoStatement
+        $pdoStatementCheckExists = $this->createMock(PDOStatement::class);
+        $pdoStatementCheckExists
+            ->method('execute')
+            ->with([12])
+            ->willReturn(true);
+
+        $pdoStatementCheckExists
+            ->method('fetch')
+            ->willReturn(['num_records' => 1]);
+
+        $pdoStatementUpdate = $this->createMock(PDOStatement::class);
+        $pdoStatementUpdate
             ->method('execute')
             ->with(['Davs du', 'q', 12])
             ->willReturn(true);
@@ -130,14 +141,46 @@ class ConnectionTest extends TestCase
         $pdo = $this->createMock(PDO::class);
         $pdo
             ->method("prepare")
-            ->with("UPDATE `some_simple_type` SET `field1` = ?, `field2` = ? WHERE `id` = ?")
-            ->willReturn($pdoStatement);
+            ->withAnyParameters()
+            ->willReturn($pdoStatementCheckExists, $pdoStatementUpdate);
 
         $obj = new SomeSimpleType(12, 'Davs du', 'q');
 
         $connection = Connection::createFromPdo($pdo);
         $stmt = $connection->persist($obj);
         $this->assertTrue(true);
+    }
+
+    public function testPersistWithIdButWithoutRecord(): void
+    {
+        $pdoStatementCheckExists = $this->createMock(PDOStatement::class);
+        $pdoStatementCheckExists
+            ->method('execute')
+            ->with([12])
+            ->willReturn(true);
+
+        $pdoStatementCheckExists
+            ->method('fetch')
+            ->willReturn(['num_records' => 0]);
+
+        $pdoStatementInsert = $this->createMock(PDOStatement::class);
+        $pdoStatementInsert
+            ->method('execute')
+            ->with([12, 'Davs du', 'q'])
+            ->willReturn(true);
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->method("prepare")
+            ->withAnyParameters()
+            ->willReturn($pdoStatementCheckExists, $pdoStatementInsert);
+
+        $obj = new SomeSimpleType(12, 'Davs du', 'q');
+
+        $connection = Connection::createFromPdo($pdo);
+        $stmt = $connection->persist($obj);
+        $this->assertTrue(true);
+
     }
 
     public function testPersistWithOutId(): void
@@ -168,8 +211,35 @@ class ConnectionTest extends TestCase
 
         $connection = Connection::createFromPdo($pdo);
 
-        $obj = new TypeWithOutId("Meh", "Meh");
+        $obj = new TypeWithOutId("Meh", "Meh", "Meh", 4);
         $connection->persist($obj);
+    }
+
+    public function testInsert(): void
+    {
+        $obj = new TypeWithOutId("Make your own", "Music", "clown", 1234);
+
+        $pdoStatement = $this->createMock(PDOStatement::class);
+        $pdoStatement
+            ->method("execute")
+            ->with(
+                [
+                    "field_number1" => "Make your own",
+                    "field_number2" => "Music",
+                    "meme" => 'clown',
+                    "fourth" => 1234,
+                ],
+            );
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->method("prepare")
+            ->with("INSERT INTO `type_with_out_id` (`field_number1`, `field_number2`, `meme`, `fourth`) VALUES (?, ?, ?, ?)")
+            ->willReturn($pdoStatement);
+
+        $connection = Connection::createFromPdo($pdo);
+        $connection->insert($obj);
+        $this->assertTrue(true);
     }
 }
 
@@ -186,7 +256,9 @@ final class SomeSimpleType
 final class TypeWithOutId
 {
     public function __construct(
-        public string $field1,
-        public string $field2,
+        public string $fieldNumber1,
+        public string $fieldNumber2,
+        public string $meme,
+        public int $fourth,
     ) {}
 }
