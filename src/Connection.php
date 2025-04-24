@@ -35,6 +35,11 @@ final class Connection
         return new Connection($pdo, $sqlMode, new MapperList());
     }
 
+    /**
+     * @param array $pdoParams Params passed to the PDO creation.
+     * @param string $varName Name of environment variable holding the URL.
+     * @return Connection
+     */
     public static function createFromEnv(
         array $pdoParams = [],
         string $varName = 'DATABASE_URL',
@@ -62,6 +67,8 @@ final class Connection
     }
 
     /**
+     * Run a query and map the result onto the provided class.
+     *
      * @template T
      * @param string $sql
      * @param class-string<T> $targetClass
@@ -75,6 +82,8 @@ final class Connection
     }
 
     /**
+     * Prepare a query and map the result onto the provided class.
+     *
      * @template T
      * @param string $sql
      * @param class-string<T> $targetClass
@@ -98,11 +107,11 @@ final class Connection
     }
 
     /**
-     * Get a DTO instance for DTO with a defined id-column
+     * Run a trivial SELECT query getting a DTO by its unique identifier.
      *
      * @template T
      * @param mixed $id             Unique id for record
-     * @param class-string<T> $targetclass    DTO class
+     * @param class-string<T> $targetClass    Mapped onto this class
      * @return Statement<T>
      */
     public function get(mixed $id, string $targetClass): Statement
@@ -120,9 +129,9 @@ final class Connection
      *
      * @template T
      * @param    T             $obj
-     * @return   Statement<T>
+     * @return   bool
      */
-    public function persist(object $obj)
+    public function persist(object $obj): bool
     {
         /** @var class-string<T> */
         $className = get_class($obj);
@@ -174,8 +183,7 @@ final class Connection
         }
 
         $stmt = $this->prepare($sql, $className);
-        $stmt->execute(array_values($fields));
-        return $stmt;
+        return $stmt->execute(array_values($fields));
     }
 
     /**
@@ -185,16 +193,15 @@ final class Connection
      *
      * @template T
      * @param    T             $obj
-     * @return   Statement<T>
+     * @return   bool
      */
-    public function insert(object $obj): Statement
+    public function insert(object $obj): bool
     {
         /** @var class-string<T> */
         $className = get_class($obj);
         $mapper = $this->mapperList->getMapper($className);
         $stmt = $this->prepare(self::makeInsert($mapper, $this->sqlMode), $className);
-        $stmt->execute($mapper->intoAssoc($obj));
-        return $stmt;
+        return $stmt->execute($mapper->intoAssoc($obj));
     }
 
     public function beginTransaction(): bool

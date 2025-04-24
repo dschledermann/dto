@@ -14,7 +14,6 @@ trait MakeCountByIdColumnTrait
     {
         $sq = $sqlMode->getStartQoute();
         $eq = $sqlMode->getEndQoute();
-        $fields = $mapper->getFieldNames();
         $idField = $mapper->getUniqueField();
 
         if (!$idField) {
