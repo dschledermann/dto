@@ -183,7 +183,7 @@ class ConnectionTest extends TestCase
 
     }
 
-    public function testPersistWithOutId(): void
+    public function testPersistWithoutId(): void
     {
         $pdoStatement = $this->createMock(PDOStatement::class);
         $pdoStatement
@@ -204,7 +204,7 @@ class ConnectionTest extends TestCase
         $this->assertTrue(true);
     }
 
-    public function testTryingToPersistTypeWithOutId(): void
+    public function testTryingToPersistTypeWithoutId(): void
     {
         $this->expectExceptionMessage("[oor4enaoR]");
         $pdo = $this->createMock(PDO::class);
@@ -222,14 +222,7 @@ class ConnectionTest extends TestCase
         $pdoStatement = $this->createMock(PDOStatement::class);
         $pdoStatement
             ->method("execute")
-            ->with(
-                [
-                    "field_number1" => "Make your own",
-                    "field_number2" => "Music",
-                    "meme" => 'clown',
-                    "fourth" => 1234,
-                ],
-            );
+            ->with([ "Make your own", "Music", 'clown', 1234]);
 
         $pdo = $this->createMock(PDO::class);
         $pdo

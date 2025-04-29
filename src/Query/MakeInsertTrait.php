@@ -4,23 +4,38 @@ declare(strict_types=1);
 
 namespace Dschledermann\Dto\Query;
 
-use Dschledermann\Dto\DtoException;
 use Dschledermann\Dto\Mapper;
 use Dschledermann\Dto\SqlMode;
 
 trait MakeInsertTrait
 {
-    protected static function makeInsert(Mapper $mapper, SqlMode $sqlMode): string
+    protected static function makeInsertWithId(Mapper $mapper, SqlMode $sqlMode): string
+    {
+        return self::realMakeInsert($mapper, $sqlMode, false);
+    }
+
+    protected static function makeInsertWithoutId(Mapper $mapper, SqlMode $sqlMode): string
+    {
+        return self::realMakeInsert($mapper, $sqlMode, true);
+    }
+
+    private static function realMakeInsert(
+        Mapper $mapper,
+        SqlMode $sqlMode,
+        bool $dropIdField,
+    ): string
     {
         $sq = $sqlMode->getStartQoute();
         $eq = $sqlMode->getEndQoute();
         $fields = $mapper->getFieldNames();
-        $idField = $mapper->getUniqueField();
 
-        foreach ($fields as $i => $field) {
-            if ($field === $idField) {
-                unset($fields[$i]);
-                break;
+        if ($dropIdField) {
+            $idField = $mapper->getUniqueField();
+            foreach ($fields as $i => $field) {
+                if ($field === $idField) {
+                    unset($fields[$i]);
+                    break;
+                }
             }
         }
 

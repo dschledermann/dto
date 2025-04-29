@@ -172,14 +172,14 @@ final class Connection
                 // The scenario is likely that we have an uuid or something similar
                 // as the primary id.
                 // Construct as an insert.
-                $sql = self::makeInsert($mapper, $this->sqlMode);
+                $sql = self::makeInsertWithId($mapper, $this->sqlMode);
             }
         } else {
             // If not, then we are inserting.
             // The id field is NULL, so we have to remove it from the record to allow
             // auto increment to do it's work.
             unset($fields[$idField]);
-            $sql = self::makeInsert($mapper, $this->sqlMode);
+            $sql = self::makeInsertWithoutId($mapper, $this->sqlMode);
         }
 
         $stmt = $this->prepare($sql, $className);
@@ -200,8 +200,11 @@ final class Connection
         /** @var class-string<T> */
         $className = get_class($obj);
         $mapper = $this->mapperList->getMapper($className);
-        $stmt = $this->prepare(self::makeInsert($mapper, $this->sqlMode), $className);
-        return $stmt->execute($mapper->intoAssoc($obj));
+        $stmt = $this->prepare(
+            self::makeInsertWithId($mapper, $this->sqlMode),
+            $className,
+        );
+        return $stmt->execute(array_values($mapper->intoAssoc($obj)));
     }
 
     public function beginTransaction(): bool

@@ -18,8 +18,8 @@ class InsertTest extends TestCase
     {
         $mapper = Mapper::create(InsertRecord::class);
         $this->assertEquals(
-            'INSERT INTO `insert_record` (`field1`, `field2`) VALUES (?, ?)',
-            self::makeInsert($mapper, SqlMode::MySQL),
+            'INSERT INTO `insert_record` (`id`, `field1`, `field2`) VALUES (?, ?, ?)',
+            self::makeInsertWithId($mapper, SqlMode::MySQL),
         );
     }
 }
@@ -28,12 +28,6 @@ final class InsertRecord
 {
     #[UniqueIdentifier]
     public ?int $id;
-    public string $field1;
-    public string $field2;
-}
-
-final class InsertWithOutId
-{
     public string $field1;
     public string $field2;
 }
