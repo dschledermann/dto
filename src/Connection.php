@@ -166,24 +166,50 @@ final class Connection
                 $fields[$idField] = $id;
 
                 // and construct as an update
-                $sql = self::makeUpdate($mapper, $this->sqlMode);
+                $stmt = $this->prepare(
+                    self::makeUpdate($mapper, $this->sqlMode),
+                    $className,
+                );
+                return $stmt->execute(array_values($fields));
             } else {
                 // We don't have a record already, but an id is set.
                 // The scenario is likely that we have an uuid or something similar
                 // as the primary id.
                 // Construct as an insert.
-                $sql = self::makeInsertWithId($mapper, $this->sqlMode);
+                $stmt = $this->prepare(
+                    self::makeInsertWithId($mapper, $this->sqlMode),
+                    $className,
+                );
+                return $stmt->execute(array_values($fields));
             }
         } else {
             // If not, then we are inserting.
             // The id field is NULL, so we have to remove it from the record to allow
             // auto increment to do it's work.
             unset($fields[$idField]);
-            $sql = self::makeInsertWithoutId($mapper, $this->sqlMode);
-        }
+            $stmt = $this->prepare(
+                self::makeInsertWithoutId($mapper, $this->sqlMode),
+                $className,
+            );
+            $success = $stmt->execute(array_values($fields));
 
-        $stmt = $this->prepare($sql, $className);
-        return $stmt->execute(array_values($fields));
+            // When we have inserted a new DTO, we assign the newly created id to
+            // our DTO so it can be persisted again if need be.
+            // The most common case if for the DTO id to be int, but the
+            // PDO::lastInsertId() returns string, so we allow for int or string.
+            $lastInsertId = $this->pdo->lastInsertId();
+            $obj->$idProperty = match ($mapper->getUniquePropertyType()) {
+                'int' => intval($lastInsertId),
+                'string' => $lastInsertId,
+                default => throw new DtoException(sprintf(
+                    '[uuceiJ4eg] ID of type %s on DTO %s:%s is not supported',
+                    $mapper->getUniquePropertyType(),
+                    $className,
+                    $idProperty,
+                )),
+            };
+            return $success;
+        }
     }
 
     /**

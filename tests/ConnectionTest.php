@@ -197,11 +197,16 @@ class ConnectionTest extends TestCase
             ->with("INSERT INTO `some_simple_type` (`field1`, `field2`) VALUES (?, ?)")
             ->willReturn($pdoStatement);
 
+        $pdo
+            ->method("lastInsertId")
+            ->willReturn("666");
+
         $obj = new SomeSimpleType(null, 'Davs du', 'q');
 
         $connection = Connection::createFromPdo($pdo);
         $stmt = $connection->persist($obj);
-        $this->assertTrue(true);
+
+        $this->assertSame(666, $obj->id);
     }
 
     public function testTryingToPersistTypeWithoutId(): void

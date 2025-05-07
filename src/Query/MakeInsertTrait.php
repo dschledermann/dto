@@ -25,8 +25,6 @@ trait MakeInsertTrait
         bool $dropIdField,
     ): string
     {
-        $sq = $sqlMode->getStartQoute();
-        $eq = $sqlMode->getEndQoute();
         $fields = $mapper->getFieldNames();
 
         if ($dropIdField) {
@@ -39,13 +37,11 @@ trait MakeInsertTrait
             }
         }
 
-        $fields = array_map(fn(string $a) => $sq.$a.$eq, $fields);
+        $fields = array_map(fn(string $a) => $sqlMode->qouteName($a), $fields);
 
         return sprintf(
-            'INSERT INTO %s%s%s (%s) VALUES (%s)',
-            $sq,
-            $mapper->getTableName(),
-            $eq,
+            'INSERT INTO %s (%s) VALUES (%s)',
+            $sqlMode->qouteName($mapper->getTableName()),
             implode(', ', $fields),
             implode(', ', array_fill(0, count($fields), '?')),
         );

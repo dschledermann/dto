@@ -12,8 +12,6 @@ trait MakeSelectOneTrait
 {
     protected static function makeSelectOne(Mapper $mapper, SqlMode $sqlMode): string
     {
-        $sq = $sqlMode->getStartQoute();
-        $eq = $sqlMode->getEndQoute();
         $uniqueField = $mapper->getUniqueField();
 
         if (!$uniqueField) {
@@ -24,13 +22,9 @@ trait MakeSelectOneTrait
         }
 
         return sprintf(
-            'SELECT * FROM %s%s%s WHERE %s%s%s = ?',
-            $sq,
-            $mapper->getTableName(),
-            $eq,
-            $sq,
-            $mapper->getUniqueField(),
-            $eq,
+            'SELECT * FROM %s WHERE %s = ?',
+            $sqlMode->qouteName($mapper->getTableName()),
+            $sqlMode->qouteName($mapper->getUniqueField()),
         );
     }
 }

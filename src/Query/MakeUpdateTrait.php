@@ -12,8 +12,6 @@ trait MakeUpdateTrait
 {
     protected static function makeUpdate(Mapper $mapper, SqlMode $sqlMode): string
     {
-        $sq = $sqlMode->getStartQoute();
-        $eq = $sqlMode->getEndQoute();
         $fields = $mapper->getFieldNames();
         $idField = $mapper->getUniqueField();
 
@@ -28,19 +26,15 @@ trait MakeUpdateTrait
 
         foreach ($fields as $field) {
             if ($field <> $idField) {
-                $result[] = sprintf('%s%s%s = ?', $sq, $field, $eq);
+                $result[] = $sqlMode->qouteName($field) . ' = ?';
             }
         }
 
         return sprintf(
-            'UPDATE %s%s%s SET %s WHERE %s%s%s = ?',
-            $sq,
-            $mapper->getTableName(),
-            $eq,
+            'UPDATE %s SET %s WHERE %s = ?',
+            $sqlMode->qouteName($mapper->getTableName()),
             implode(', ', $result),
-            $sq,
-            $mapper->getUniqueField(),
-            $eq,
+            $sqlMode->qouteName($mapper->getUniqueField()),
         );
     }
 }

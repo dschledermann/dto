@@ -9,19 +9,11 @@ enum SqlMode
     case MySQL;
     case ANSI;
 
-    public function getStartQoute(): string
+    public function qouteName(string $name): string
     {
-        return match ($this) {
-            SqlMode::MySQL => '`',
-            SqlMode::ANSI => '"',
-        };
-    }
-
-    public function getEndQoute(): string
-    {
-        return match ($this) {
-            SqlMode::MySQL => '`',
-            SqlMode::ANSI => '"',
+        return match($this) {
+            SqlMode::MySQL => '`' . $name . '`',
+            default => '"' . $name . '"',
         };
     }
 }

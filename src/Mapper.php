@@ -125,6 +125,13 @@ final class Mapper
         }
     }
 
+    public function getUniquePropertyType(): ?string
+    {
+        if ($this->uniqueProperty) {
+            return $this->uniqueProperty->property->getType()->getName();
+        }
+    }
+
     public function getTableName(): string
     {
         return $this->tableName;

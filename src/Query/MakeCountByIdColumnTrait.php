@@ -8,12 +8,10 @@ use Dschledermann\Dto\DtoException;
 use Dschledermann\Dto\Mapper;
 use Dschledermann\Dto\SqlMode;
 
-trait MakeCountByIdColumnTrait   
+trait MakeCountByIdColumnTrait
 {
     protected static function makeCountByIdColumn(Mapper $mapper, SqlMode $sqlMode): string
     {
-        $sq = $sqlMode->getStartQoute();
-        $eq = $sqlMode->getEndQoute();
         $idField = $mapper->getUniqueField();
 
         if (!$idField) {
@@ -24,13 +22,9 @@ trait MakeCountByIdColumnTrait
         }
 
         return sprintf(
-            "SELECT COUNT(*) AS num_records FROM %s%s%s WHERE %s%s%s = ?",
-            $sq,
-            $mapper->getTableName(),
-            $eq,
-            $sq,
-            $idField,
-            $eq,
+            "SELECT COUNT(*) AS num_records FROM %s WHERE %s = ?",
+            $sqlMode->qouteName($mapper->getTableName()),
+            $sqlMode->qouteName($idField),
         );
     }
 }
