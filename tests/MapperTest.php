@@ -50,23 +50,57 @@ class MapperTest extends TestCase
         $arr = ['field' => 'mememem'];
         $mapper->fromAssoc($arr);
     }
+
+    public function testGettingUniqueFieldInDtoWithoutUniqueField(): void
+    {
+        $this->expectExceptionMessage('[ohya9tu4X]');
+        $dto = new SimpleDto('some-string', 12.44);
+        $mapper = Mapper::create(SimpleDto::class);
+        $mapper->getUniqueValue($dto);
+    }
+
+    public function testSettingUniqueFieldInDtoWithoutUniqueField(): void
+    {
+        $this->expectExceptionMessage('[eNigah4bi]');
+        $dto = new SimpleDto('some-string', 12.44);
+        $mapper = Mapper::create(SimpleDto::class);
+        $mapper->setUniqueValue($dto, "7c1ef27c-2bd8-11f0-aad0-f76d6847cabb");
+    }
+
+    public function testGettingAndSettingUniqueField(): void
+    {
+        $dto = new TestDto(null, 'John', 'ohVae9ooM', 12.077, 123);
+        $mapper = Mapper::create(TestDto::class);
+
+        $this->assertNull($mapper->getUniqueValue($dto));
+
+        $mapper->setUniqueValue($dto, "123");
+        $this->assertEquals(123, $dto->id);
+
+        $mapper->setUniqueValue($dto, 666);
+        $this->assertEquals(666, $dto->id);
+    }
 }
 
 class SimpleDto
 {
-    public string $field;
-    public float $anotherField;
+    public function __construct(
+        public string $field,
+        public float $anotherField,
+    ) {}
 }
 
 #[SetSqlName("another_table_name")]
 class TestDto
 {
-    #[UniqueIdentifier]
-    public ?int $id;
-    public string $name;
-    public string $someField;
-    #[SetSqlName("new_name")]
-    public float $renamedField;
-    #[Ignore]
-    public int $ignoredField;
+    public function __construct(
+        #[UniqueIdentifier]
+        public ?int $id,
+        public string $name,
+        public string $someField,
+        #[SetSqlName("new_name")]
+        public float $renamedField,
+        #[Ignore]
+        public int $ignoredField,
+    ) {}
 }

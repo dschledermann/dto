@@ -19,7 +19,7 @@ use ReflectionClass;
 final class Mapper
 {
     /**
-     * @param Reflectionclass<T>  $reflector
+     * @param ReflectionClass<T>  $reflector
      * @param string              $table
      * @param ?MapUnit            $uniqueProperty
      * @param MapUnit[]           $propertyMap
@@ -116,22 +116,6 @@ final class Mapper
         }
     }
 
-    public function getUniqueProperty(): ?string
-    {
-        if ($this->uniqueProperty) {
-            return $this->uniqueProperty->propertyName;
-        } else {
-            return null;
-        }
-    }
-
-    public function getUniquePropertyType(): ?string
-    {
-        if ($this->uniqueProperty) {
-            return $this->uniqueProperty->property->getType()->getName();
-        }
-    }
-
     public function getTableName(): string
     {
         return $this->tableName;
@@ -140,6 +124,60 @@ final class Mapper
     public function getFieldNames(): array
     {
         return array_map(fn($e) => $e->keyName, $this->propertyMap);
+    }
+
+    /**
+     * Get unique identifier if any exists on the object
+     *
+     * @param T  $obj
+     * @return mixed
+     */
+    public function getUniqueValue(object $obj): mixed
+    {
+        if ($this->uniqueProperty) {
+            return $this->uniqueProperty->property->getValue($obj);
+        } else {
+            throw new DtoException(sprintf(
+                "[ohya9tu4X] '%s' does not have a unique property",
+                $this->reflector->getName(),
+            ));
+        }
+    }
+
+    /**
+     * Update the id value for an object
+     *
+     * @param T  $obj
+     * @param mixed $idValue
+     */
+    public function setUniqueValue(object $obj, mixed $idValue): void
+    {
+        if ($this->uniqueProperty) {
+            $myIdType = $this->uniqueProperty->property->getType()->getName();
+            $givenIdType = gettype($idValue);
+            $givenIdType = match ($givenIdType) {
+                'integer' => 'int',
+                default => $givenIdType,
+            };
+            if ($givenIdType === $myIdType) {
+                $this->uniqueProperty->property->setValue($obj, $idValue);
+            } elseif ($givenIdType === 'string' && $myIdType === 'int') {
+                $this->uniqueProperty->property->setValue($obj, intval($idValue));
+            } else {
+                throw new DtoException(sprintf(
+                    "[King4poo3] Unable to set unique value on '%s'."
+                        . " ID is of type '%s' and a value of type '%s' was given",
+                    $this->reflector->getName(),
+                    $myIdType,
+                    $givenIdType,
+                ));
+            }
+        } else {
+            throw new DtoException(sprintf(
+                "[eNigah4bi] '%s' does not have a unique property",
+                $this->reflector->getName(),
+            ));
+        }
     }
 
     /**

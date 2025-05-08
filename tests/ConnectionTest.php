@@ -6,7 +6,6 @@ namespace Tests\Dschledermann\Dto;
 
 use Dschledermann\Dto\Connection;
 use Dschledermann\Dto\Mapper\UniqueIdentifier;
-use Dschledermann\Dto\DefaultTypes\NumRecords;
 use PDO;
 use PDOStatement;
 use PHPUnit\Framework\TestCase;

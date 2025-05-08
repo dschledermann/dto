@@ -144,11 +144,8 @@ final class Connection
             ));
         }
 
-        $idProperty = $mapper->getUniqueProperty();
         $idField = $mapper->getUniqueField();
-
-        $id = $obj->$idProperty;
-
+        $id = $mapper->getUniqueValue($obj);
         $fields = $mapper->intoAssoc($obj);
 
         // Is the id set?
@@ -194,20 +191,7 @@ final class Connection
             $success = $stmt->execute(array_values($fields));
 
             // When we have inserted a new DTO, we assign the newly created id to
-            // our DTO so it can be persisted again if need be.
-            // The most common case if for the DTO id to be int, but the
-            // PDO::lastInsertId() returns string, so we allow for int or string.
-            $lastInsertId = $this->pdo->lastInsertId();
-            $obj->$idProperty = match ($mapper->getUniquePropertyType()) {
-                'int' => intval($lastInsertId),
-                'string' => $lastInsertId,
-                default => throw new DtoException(sprintf(
-                    '[uuceiJ4eg] ID of type %s on DTO %s:%s is not supported',
-                    $mapper->getUniquePropertyType(),
-                    $className,
-                    $idProperty,
-                )),
-            };
+            $mapper->setUniqueValue($obj, $this->pdo->lastInsertId());
             return $success;
         }
     }
