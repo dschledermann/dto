@@ -27,6 +27,11 @@ final class Connection
         private MapperList $mapperList,
     ) {}
 
+    /**
+     * @param PDO      $pdo      An already connected PDO.
+     * @param SqlMode  $sqlMode  The SQL mode.
+     * @return Connection
+     */
     public static function createFromPdo(
         PDO $pdo,
         SqlMode $sqlMode = SqlMode::MySQL,
@@ -36,8 +41,8 @@ final class Connection
     }
 
     /**
-     * @param array $pdoParams Params passed to the PDO creation.
-     * @param string $varName Name of environment variable holding the URL.
+     * @param array    $pdoParams   Params passed to the PDO creation.
+     * @param string   $varName     Name of environment variable holding the URL.
      * @return Connection
      */
     public static function createFromEnv(
@@ -46,6 +51,16 @@ final class Connection
     ): Connection
     {
         $url = getenv($varName);
+        return Connection::createFromUrl($url, $pdoParams);
+    }
+
+    /**
+     * @param string  $url        DATABASE_URL format url string for connection.
+     * @param array   $pdoParams  Params passed to the PDO creation.
+     * @return Connection
+     */
+    public static function createFromUrl(string $url, array $pdoParams): Connection
+    {
         $dsn = sprintf(
             "%s:host=%s;dbname=%s",
             $url["scheme"],
