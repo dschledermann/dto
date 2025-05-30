@@ -23,8 +23,8 @@ trait MakeSelectOneTrait
 
         return sprintf(
             'SELECT * FROM %s WHERE %s = ?',
-            $sqlMode->qouteName($mapper->getTableName()),
-            $sqlMode->qouteName($mapper->getUniqueField()),
+            $sqlMode->quoteName($mapper->getTableName()),
+            $sqlMode->quoteName($mapper->getUniqueField()),
         );
     }
 }

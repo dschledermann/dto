@@ -28,6 +28,8 @@ final class Connection
     ) {}
 
     /**
+     * Create a Connection from an already connected PDO.
+     *
      * @param PDO      $pdo      An already connected PDO.
      * @param SqlMode  $sqlMode  The SQL mode.
      * @return Connection
@@ -41,6 +43,8 @@ final class Connection
     }
 
     /**
+     * Create a Connection from a the URL in named environment variable.
+     *
      * @param array    $pdoParams   Params passed to the PDO creation.
      * @param string   $varName     Name of environment variable holding the URL.
      * @return Connection
@@ -55,6 +59,8 @@ final class Connection
     }
 
     /**
+     * Create a Connection from a provided URL.
+     *
      * @param string  $url        DATABASE_URL format url string for connection.
      * @param array   $pdoParams  Params passed to the PDO creation.
      * @return Connection
@@ -139,8 +145,9 @@ final class Connection
     }
 
     /**
-     * Persist a DTO with a defined id-column
-     * This method can deduce if an UPDATE or an INSERT is needed.
+     * Persist a DTO that is assumed to reflect a table.
+     * This method can deduce if an UPDATE or an INSERT is needed, but it has a bit
+     * more database overhead than ::insert() or ::update().
      *
      * @template T
      * @param    T             $obj
@@ -152,14 +159,15 @@ final class Connection
         $className = get_class($obj);
         $mapper = $this->mapperList->getMapper($className);
 
-        if (is_null($mapper->getUniqueField())) {
+        $idField = $mapper->getUniqueField();
+
+        if (is_null($idField)) {
             throw new DtoException(sprintf(
                 "[oor4enaoR] %s does not have a unique field. Cannot use persist()",
                 $mapper->getTableName(),
             ));
         }
 
-        $idField = $mapper->getUniqueField();
         $id = $mapper->getUniqueValue($obj);
         $fields = $mapper->intoAssoc($obj);
 
@@ -197,7 +205,7 @@ final class Connection
         } else {
             // If not, then we are inserting.
             // The id field is NULL, so we have to remove it from the record to allow
-            // auto increment to do it's work.
+            // auto increment to do its work.
             unset($fields[$idField]);
             $stmt = $this->prepare(
                 self::makeInsertWithoutId($mapper, $this->sqlMode),
@@ -213,8 +221,9 @@ final class Connection
 
     /**
      * Insert a DTO that is assumed to reflect a table.
-     * Most often a DTO that completely reflect a single table, you should consider
-     * use the Connection::persist()-method instead.
+     * Use this if you know for certain that you are dealing with a new instance.
+     * If you are not sure, then use the ::persist()-method.
+     * You can use this method with types without a defined id field.
      *
      * @template T
      * @param    T             $obj
@@ -225,11 +234,77 @@ final class Connection
         /** @var class-string<T> */
         $className = get_class($obj);
         $mapper = $this->mapperList->getMapper($className);
+
+        $values = $mapper->intoAssoc($obj);
+        $uniqueField = $mapper->getUniqueField();
+
+        // Do we have a unique field AND the unique field is null
+        if ($uniqueField && is_null($values[$uniqueField])) {
+            // Then we are dealing with an autoincrement field
+            // Unset it and do an insert without it.
+            unset($values[$uniqueField]);
+            $stmt = $this->prepare(
+                self::makeInsertWithoutId($mapper, $this->sqlMode),
+                $className,
+            );
+            $success = $stmt->execute(array_values($values));
+            $mapper->setUniqueValue($obj, $this->pdo->lastInsertId());
+            return $success;
+        } else {
+            // Insert the whole thing
+            $stmt = $this->prepare(
+                self::makeInsertWithId($mapper, $this->sqlMode),
+                $className,
+            );
+            return $stmt->execute(array_values($values));
+        }
+
+    }
+
+    /**
+     * Update a DTO that is assumed to reflect a table.
+     * Use this if you know for certain that you are dealing with an existing instance.
+     * If you are not sure, then use the ::persist()-method.
+     * This method requires a defined id-column and that the column has a non-null
+     * value.
+     *
+     * @template T
+     * @param    T           $obj
+     * @return   bool
+     */
+    public function update(object $obj): bool
+    {
+        /** @var class-string<T> */
+        $className = get_class($obj);
+        $mapper = $this->mapperList->getMapper($className);
+
+        $uniqueField = $mapper->getUniqueField();
+        if (is_null($uniqueField)) {
+            throw new DtoException(sprintf(
+                '[Eg7Ahdoh9] Cannot construct update as "%s" does not a unique identifier.',
+                $className,
+            ));
+        }
+
+        $id = $mapper->getUniqueValue($obj);
+        if (is_null($id)) {
+            throw new DtoException(sprintf(
+                '[eiK9Aegai] Cannot update as the "%s::%s" field is null',
+                $className,
+                $uniqueField,
+            ));
+        }
+
+        // Move id to last field
+        $values = $mapper->intoAssoc($obj);
+        unset($values[$uniqueField]);
+        $values[$uniqueField] = $id;
+
         $stmt = $this->prepare(
-            self::makeInsertWithId($mapper, $this->sqlMode),
+            self::makeUpdate($mapper, $this->sqlMode),
             $className,
         );
-        return $stmt->execute(array_values($mapper->intoAssoc($obj)));
+        return $stmt->execute(array_values($values));
     }
 
     public function beginTransaction(): bool

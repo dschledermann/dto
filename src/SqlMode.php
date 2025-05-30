@@ -9,7 +9,7 @@ enum SqlMode
     case MySQL;
     case ANSI;
 
-    public function qouteName(string $name): string
+    public function quoteName(string $name): string
     {
         return match($this) {
             SqlMode::MySQL => '`' . $name . '`',

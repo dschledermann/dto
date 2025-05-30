@@ -195,7 +195,6 @@ class ConnectionTest extends TestCase
             ->method("prepare")
             ->with("INSERT INTO `some_simple_type` (`field1`, `field2`) VALUES (?, ?)")
             ->willReturn($pdoStatement);
-
         $pdo
             ->method("lastInsertId")
             ->willReturn("666");
@@ -212,21 +211,19 @@ class ConnectionTest extends TestCase
     {
         $this->expectExceptionMessage("[oor4enaoR]");
         $pdo = $this->createMock(PDO::class);
-
         $connection = Connection::createFromPdo($pdo);
-
         $obj = new TypeWithOutId("Meh", "Meh", "Meh", 4);
         $connection->persist($obj);
     }
 
-    public function testInsert(): void
+    public function testInsertWithoutIdColumn(): void
     {
         $obj = new TypeWithOutId("Make your own", "Music", "clown", 1234);
 
         $pdoStatement = $this->createMock(PDOStatement::class);
         $pdoStatement
             ->method("execute")
-            ->with([ "Make your own", "Music", 'clown', 1234]);
+            ->with(["Make your own", "Music", 'clown', 1234]);
 
         $pdo = $this->createMock(PDO::class);
         $pdo
@@ -237,6 +234,102 @@ class ConnectionTest extends TestCase
         $connection = Connection::createFromPdo($pdo);
         $connection->insert($obj);
         $this->assertTrue(true);
+    }
+
+    public function testInsertWithIdColumnNull(): void
+    {
+        $obj = new SomeSimpleType(null, "Most amazing", "Nobody's ever seen anything like it");
+
+        $pdoStatement = $this->createMock(PDOStatement::class);
+        $pdoStatement
+            ->method('execute')
+            ->with(["Most amazing", "Nobody's ever seen anything like it"]);
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->method("prepare")
+            ->with('INSERT INTO `some_simple_type` (`field1`, `field2`) VALUES (?, ?)')
+            ->willReturn($pdoStatement);
+        $pdo
+            ->method('lastInsertId')
+            ->willReturn('123123');
+
+        $connection = Connection::createFromPdo($pdo);
+        $connection->insert($obj);
+
+        $this->assertSame(123123, $obj->id);
+    }
+
+    public function testHealthyUpdate(): void
+    {
+        $obj = new SomeSimpleType(5, 'Laws', 'Of stupidity');
+
+        $pdoStatement = $this->createMock(PDOStatement::class);
+        $pdoStatement
+            ->method('execute')
+            ->with(['Laws', 'Of stupidity', 5]);
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->method("prepare")
+            ->with('UPDATE `some_simple_type` SET `field1` = ?, `field2` = ? WHERE `id` = ?')
+            ->willReturn($pdoStatement);
+
+        $connection = Connection::createFromPdo($pdo);
+        $connection->update($obj);
+        $this->assertTrue(true);
+    }
+
+    public function testUpdateWithoutIdField(): void
+    {
+        $this->expectExceptionMessage('[Eg7Ahdoh9]');
+        $obj = new TypeWithOutId('Do', 'Ray', 'Egon', 1989);
+        $pdo = $this->createMock(PDO::class);
+        $connection = Connection::createFromPdo($pdo);
+        $connection->update($obj);
+    }
+
+    public function testUpdateWithNullId(): void
+    {
+        $this->expectExceptionMessage('[eiK9Aegai]');
+        $obj = new SomeSimpleType(null, 'Bricks', 'To Make');
+        $pdo = $this->createMock(PDO::class);
+        $connection = Connection::createFromPdo($pdo);
+        $connection->update($obj);
+    }
+
+    public function testProxies(): void
+    {
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->expects($this->once())
+            ->method('beginTransaction');
+        $pdo
+            ->expects($this->once())
+            ->method('commit');
+        $pdo
+            ->expects($this->once())
+            ->method('rollback');
+        $pdo
+            ->expects($this->once())
+            ->method('errorCode')
+            ->willReturn("Damn!");
+        $pdo
+            ->expects($this->once())
+            ->method('errorInfo')
+            ->willReturn([1, 2, 3]);
+        $pdo
+            ->expects($this->once())
+            ->method('lastInsertId')
+            ->willReturn('1975');
+
+        $connection = Connection::createFromPdo($pdo);
+        $connection->beginTransaction();
+        $connection->commit();
+        $connection->rollback();
+        $this->assertSame('Damn!', $connection->errorCode());
+        $this->assertSame([1, 2, 3], $connection->errorInfo());
+        $this->assertSame('1975', $connection->lastInsertId());
     }
 }
 

@@ -26,15 +26,15 @@ trait MakeUpdateTrait
 
         foreach ($fields as $field) {
             if ($field <> $idField) {
-                $result[] = $sqlMode->qouteName($field) . ' = ?';
+                $result[] = $sqlMode->quoteName($field) . ' = ?';
             }
         }
 
         return sprintf(
             'UPDATE %s SET %s WHERE %s = ?',
-            $sqlMode->qouteName($mapper->getTableName()),
+            $sqlMode->quoteName($mapper->getTableName()),
             implode(', ', $result),
-            $sqlMode->qouteName($mapper->getUniqueField()),
+            $sqlMode->quoteName($mapper->getUniqueField()),
         );
     }
 }

@@ -37,11 +37,11 @@ trait MakeInsertTrait
             }
         }
 
-        $fields = array_map(fn(string $a) => $sqlMode->qouteName($a), $fields);
+        $fields = array_map(fn(string $a) => $sqlMode->quoteName($a), $fields);
 
         return sprintf(
             'INSERT INTO %s (%s) VALUES (%s)',
-            $sqlMode->qouteName($mapper->getTableName()),
+            $sqlMode->quoteName($mapper->getTableName()),
             implode(', ', $fields),
             implode(', ', array_fill(0, count($fields), '?')),
         );
