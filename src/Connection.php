@@ -67,6 +67,7 @@ final class Connection
      */
     public static function createFromUrl(string $url, array $pdoParams): Connection
     {
+        $url = parse_url($url);
         $dsn = sprintf(
             "%s:host=%s;dbname=%s",
             $url["scheme"],
