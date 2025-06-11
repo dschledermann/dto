@@ -9,7 +9,7 @@ use PDOStatement;
 /**
  * @template T
  */
-final class Statement
+class Statement
 {
     /**
      * @template T
