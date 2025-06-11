@@ -129,7 +129,7 @@ class ConnectionTest extends TestCase
 
         $pdoStatementCheckExists
             ->method('fetch')
-            ->willReturn(['num_records' => 1]);
+            ->willReturn(['val' => 1]);
 
         $pdoStatementUpdate = $this->createMock(PDOStatement::class);
         $pdoStatementUpdate
@@ -160,7 +160,7 @@ class ConnectionTest extends TestCase
 
         $pdoStatementCheckExists
             ->method('fetch')
-            ->willReturn(['num_records' => 0]);
+            ->willReturn(['val' => 0]);
 
         $pdoStatementInsert = $this->createMock(PDOStatement::class);
         $pdoStatementInsert

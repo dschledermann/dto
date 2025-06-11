@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dschledermann\Dto\DefaultTypes;
 
-final class NumRecords
+final class SingleFloat
 {
-    public int $numRecords;
+    public float $val;
 }

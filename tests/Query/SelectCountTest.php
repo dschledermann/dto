@@ -18,7 +18,7 @@ class SelectCountTest extends TestCase
     {
         $mapper = Mapper::create(CountRecord::class);
         $this->assertSame(
-            'SELECT COUNT(*) AS num_records FROM `count_record` WHERE `id` = ?',
+            'SELECT COUNT(*) AS val FROM `count_record` WHERE `id` = ?',
             static::makeCountByIdColumn($mapper, SqlMode::MySQL),
         );
     }

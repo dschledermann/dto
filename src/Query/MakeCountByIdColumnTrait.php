@@ -22,7 +22,7 @@ trait MakeCountByIdColumnTrait
         }
 
         return sprintf(
-            "SELECT COUNT(*) AS num_records FROM %s WHERE %s = ?",
+            "SELECT COUNT(*) AS val FROM %s WHERE %s = ?",
             $sqlMode->quoteName($mapper->getTableName()),
             $sqlMode->quoteName($idField),
         );

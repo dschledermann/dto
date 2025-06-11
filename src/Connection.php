@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Dschledermann\Dto;
 
-use Dschledermann\Dto\DefaultTypes\NumRecords;
+use Dschledermann\Dto\DefaultTypes\SingleInt;
 use Dschledermann\Dto\Query\MakeCountByIdColumnTrait;
 use Dschledermann\Dto\Query\MakeInsertTrait;
 use Dschledermann\Dto\Query\MakeSelectOneTrait;
 use Dschledermann\Dto\Query\MakeUpdateTrait;
 use PDO;
 
-final class Connection
+class Connection
 {
     use MakeCountByIdColumnTrait;
     use MakeInsertTrait;
@@ -176,11 +176,11 @@ final class Connection
         if ($id) {
             // We have an id supplied
             $checkExistsSql = self::makeCountByIdColumn($mapper, $this->sqlMode);
-            $stmt = $this->prepare($checkExistsSql, NumRecords::class);
+            $stmt = $this->prepare($checkExistsSql, SingleInt::class);
             $stmt->execute([$id]);
             $numRecords = $stmt->fetch();
 
-            if ($numRecords->numRecords > 0) {
+            if ($numRecords->val > 0) {
                 // We have a record.
                 // Moving the id field to the end.
                 unset($fields[$idField]);
