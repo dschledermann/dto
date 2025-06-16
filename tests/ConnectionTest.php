@@ -331,6 +331,13 @@ class ConnectionTest extends TestCase
         $this->assertSame([1, 2, 3], $connection->errorInfo());
         $this->assertSame('1975', $connection->lastInsertId());
     }
+
+    public function testInheritedConnectionUsefulInMultiDatabaseEnvironments(): void
+    {
+        $pdo = $this->createMock(PDO::class);
+        $connection = InheritedConnection::createFromPdo($pdo);
+        $this->assertInstanceOf(InheritedConnection::class, $connection);
+    }
 }
 
 final class SomeSimpleType
@@ -352,3 +359,6 @@ final class TypeWithOutId
         public int $fourth,
     ) {}
 }
+
+final class InheritedConnection extends Connection
+{}

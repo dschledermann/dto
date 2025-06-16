@@ -20,7 +20,7 @@ final class Mapper
 {
     /**
      * @param ReflectionClass<T>  $reflector
-     * @param string              $table
+     * @param string              $tableName
      * @param ?MapUnit            $uniqueProperty
      * @param MapUnit[]           $propertyMap
      */

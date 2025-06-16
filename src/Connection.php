@@ -32,14 +32,14 @@ class Connection
      *
      * @param PDO      $pdo      An already connected PDO.
      * @param SqlMode  $sqlMode  The SQL mode.
-     * @return Connection
+     * @return static
      */
-    public static function createFromPdo(
+    public static final function createFromPdo(
         PDO $pdo,
         SqlMode $sqlMode = SqlMode::MySQL,
-    ): Connection
+    ): static
     {
-        return new Connection($pdo, $sqlMode, new MapperList());
+        return new static($pdo, $sqlMode, new MapperList());
     }
 
     /**
@@ -47,15 +47,15 @@ class Connection
      *
      * @param array    $pdoParams   Params passed to the PDO creation.
      * @param string   $varName     Name of environment variable holding the URL.
-     * @return Connection
+     * @return static
      */
-    public static function createFromEnv(
+    public static final function createFromEnv(
         array $pdoParams = [],
         string $varName = 'DATABASE_URL',
-    ): Connection
+    ): static
     {
         $url = getenv($varName);
-        return Connection::createFromUrl($url, $pdoParams);
+        return static::createFromUrl($url, $pdoParams);
     }
 
     /**
@@ -63,9 +63,9 @@ class Connection
      *
      * @param string  $url        DATABASE_URL format url string for connection.
      * @param array   $pdoParams  Params passed to the PDO creation.
-     * @return Connection
+     * @return static
      */
-    public static function createFromUrl(string $url, array $pdoParams): Connection
+    public static final function createFromUrl(string $url, array $pdoParams): static
     {
         $url = parse_url($url);
         $dsn = sprintf(
@@ -85,7 +85,7 @@ class Connection
             $sqlMode = SqlMode::ANSI;
         }
 
-        return new Connection($pdo, $sqlMode, new MapperList());
+        return new static($pdo, $sqlMode, new MapperList());
     }
 
     /**
