@@ -176,6 +176,29 @@ final class BlogPost
 If you need something else, feel free to implement the KeyMapperInterface in your own type and make it an attribute.
 KeyMapperInterface attributes work both for class names and property names.
 
+### How about single values?
+
+Sometimes you just need a single value from the result set and not a complex type.
+It can be a bit cumbersome to either specify a new type for just one value,
+or revert to using PDO for this only.
+To do this you can specify that you want a single primitive value.
+Consider this code example:
+
+```php
+use Dschledermann\Dto\Primitive;
+
+$stmt = $connection->prepare(
+    "SELECT value1, value2
+     FROM some_table",
+     Primitive::INTEGER,
+);
+
+$values = $stmt->fetchAll();
+```
+
+The $values variable now contains an array of integers from only the first element in each row.
+Column names are not considered and all values are typecast to the requested type.
+
 ## FAQ
 
 #### Q: Why not just use Doctrine?
