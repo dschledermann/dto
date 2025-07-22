@@ -7,6 +7,7 @@ namespace Tests\Dschledermann\Dto;
 use Dschledermann\Dto\MapperList;
 use Dschledermann\Dto\Mapper\Ignore;
 use Dschledermann\Dto\Mapper\UniqueIdentifier;
+use Dschledermann\Dto\Primitive;
 use Dschledermann\Dto\Statement;
 use PDOStatement;
 use PHPUnit\Framework\TestCase;
@@ -56,7 +57,39 @@ class StatementTest extends TestCase
         $this->assertInstanceOf(SomeDummy::class, $obj);
         $this->assertSame(23, $obj->id);
         $this->assertSame('Hey', $obj->field1);
+    }
 
+    public function testGettingPrimitives(): void
+    {
+        $pdoStatement = $this->createMock(PDOStatement::class);
+        $pdoStatement
+            ->method('execute')
+            ->with([])
+            ->willReturn(true);
+
+        $pdoStatement
+            ->method('fetch')
+            ->willReturn(["1212", "meme"], ["234", "faat"]);
+
+        $statement = new Statement($pdoStatement, Primitive::INTEGER, new MapperList());
+        $statement->execute([]);
+
+        $this->assertSame(1212, $statement->fetch());
+        $this->assertSame(234, $statement->fetch());
+
+        $pdoStatement
+            ->method('fetchAll')
+            ->willReturn([
+                ['tt7654', 'fsdf'],
+                ['true', 'bnt'],
+                ['', '66'],
+                [0, '77'],
+            ]);
+
+        $statement = new Statement($pdoStatement, Primitive::BOOLEAN, new MapperList());
+        $statement->execute([]);
+
+        $this->assertSame([true, true, false, false], $statement->fetchAll());
     }
 }
 

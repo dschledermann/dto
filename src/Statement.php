@@ -11,18 +11,22 @@ use PDOStatement;
  */
 class Statement
 {
+    private ?Primitive $primitiveType;
+
     /**
      * @template T
      * @param PDOStatement $stmt
-     * @param class-string<T>  $targetClass
+     * @param class-string<T>  $targetType
      * @param MapperList $mapperList
      * @return Statement<T>
      */
     public function __construct(
         private PDOStatement $stmt,
-        private string $targetClass,
+        private string $targetType,
         private MapperList $mapperList,
-    ) {}
+    ) {
+        $this->primitiveType = Primitive::create($targetType);
+    }
 
     /**
      * @param array|object $params  Parameters for the query execution.
@@ -40,13 +44,19 @@ class Statement
     /**
      * @return T|null
      */
-    public function fetch(): ?object
+    public function fetch(): mixed
     {
         if ($row = $this->stmt->fetch()) {
-            return $this
-                ->mapperList
-                ->getMapper($this->targetClass)
-                ->fromAssoc($row);
+            if ($this->primitiveType) {
+                return $this
+                    ->primitiveType
+                    ->castResult($row);
+            } else {
+                return $this
+                    ->mapperList
+                    ->getMapper($this->targetType)
+                    ->fromAssoc($row);
+            }
         } else {
             return null;
         }
@@ -59,10 +69,17 @@ class Statement
     {
         $rows = $this->stmt->fetchAll();
         $values = [];
-        $mapper = $this->mapperList->getMapper($this->targetClass);
 
-        foreach ($rows as $row) {
-            $values[] = $mapper->fromAssoc($row);
+        if ($this->primitiveType) {
+            $primitive = $this->primitiveType;
+            foreach ($rows as $row) {
+                $values[] = $primitive->castResult($row);
+            }
+        } else {
+            $mapper = $this->mapperList->getMapper($this->targetType);
+            foreach ($rows as $row) {
+                $values[] = $mapper->fromAssoc($row);
+            }
         }
 
         return $values;

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Dschledermann\Dto;
 
-use Dschledermann\Dto\DefaultTypes\SingleInt;
 use Dschledermann\Dto\Query\MakeCountByIdColumnTrait;
 use Dschledermann\Dto\Query\MakeInsertTrait;
 use Dschledermann\Dto\Query\MakeSelectOneTrait;
@@ -176,11 +175,11 @@ class Connection
         if ($id) {
             // We have an id supplied
             $checkExistsSql = self::makeCountByIdColumn($mapper, $this->sqlMode);
-            $stmt = $this->prepare($checkExistsSql, SingleInt::class);
+            $stmt = $this->prepare($checkExistsSql, Primitive::INTEGER);
             $stmt->execute([$id]);
             $numRecords = $stmt->fetch();
 
-            if ($numRecords->val > 0) {
+            if ($numRecords > 0) {
                 // We have a record.
                 // Moving the id field to the end.
                 unset($fields[$idField]);
