@@ -51,6 +51,7 @@ Example:
 $stmt = $connection->query("SELECT * FROM person", Person::class);
 ```
 
+### Fetching values
 The Statement::fetch() will now emit objects of the type Person for each row returned.
 The fields from the resultset is mapped to the corresponding field on the class.
 If a field from the resultset does not map onto a field in the class, it is just ommitted.
@@ -62,11 +63,30 @@ $person = $stmt->fetch();
 
 The $person variable will now contain a Person object and your IDE should also indicate that this is this is the case.
 
+If you want to get all elements in one method, you can use Statement::fetchAll():
+
+```php
+$persons = $stmt->fetchAll();
+```
+
+Sometimes it's ergonomic if the elements are indexed by their unique field.
+To do this you can use the Statement::fetchAllIndexed() method:
+
+```php
+$persons = $stmt->fetchAllIndexed();
+```
+
+The keys in the "$persons" array are now taken from the Person::$id field from each record.
+This will only work if the target class has a unique field.
+
 ### Executing a prepare
 You can also do a prepare for a query.
 
 ```php
-$stmt = $connection->prepare("SELECT * FROM person WHERE age = ?", Person::class);
+$stmt = $connection->prepare(
+    "SELECT * FROM person WHERE age = ?",
+    Person::class,
+);
 $stmt->execute([49]);
 
 $persons = $stmt->fetchAll();
@@ -188,9 +208,8 @@ Consider this code example:
 use Dschledermann\Dto\Primitive;
 
 $stmt = $connection->prepare(
-    "SELECT value1, value2
-     FROM some_table",
-     Primitive::INTEGER,
+    "SELECT value1, value2 FROM some_table",
+    Primitive::INTEGER,
 );
 
 $values = $stmt->fetchAll();

@@ -91,12 +91,67 @@ class StatementTest extends TestCase
 
         $this->assertSame([true, true, false, false], $statement->fetchAll());
     }
+
+    public function testGettingRowsIndexed(): void
+    {
+        $pdoStmt = $this->createMock(PDOStatement::class);
+        $pdoStmt
+            ->method('execute')
+            ->with([])
+            ->willReturn(true);
+
+        $pdoStmt
+            ->method('fetch')
+            ->willReturn(
+                ["id" => "1212", "field1" => "a", "field2" => "b"],
+                ["id" => "3342", "field1" => "c", "field2" => "d"],
+                ["id" => "1234", "field1" => "e", "field2" => "f"],
+                null,
+            );
+
+        $statement = new Statement($pdoStmt, SomeDummy::class, new MapperList());
+        $statement->execute([]);
+
+        $result = $statement->fetchAllIndexed();
+
+        $this->assertIsArray($result);
+        $this->assertSame(3, count($result));
+
+        foreach ($result as $id => $element) {
+            $this->assertIsInt($id);
+            $this->assertSame($id, $element->id);
+        }
+
+        $this->assertSame("d", $result[3342]->field2);
+    }
+
+    public function testAttemptingToIndexPrimitiveType(): void
+    {
+        $this->expectExceptionMessage("[seengie3U]");
+        $pdoStmt = $this->createMock(PDOStatement::class);
+        $statement = new Statement($pdoStmt, Primitive::INTEGER, new MapperList());
+        $statement->fetchAllIndexed();
+    }
+
+    public function testAttemptingToIndexTypeWithoutUniqueId(): void
+    {
+        $this->expectExceptionMessage("[Xuta3ahri]");
+        $pdoStmt = $this->createMock(PDOStatement::class);
+        $statement = new Statement($pdoStmt, DummyWithoutId::class, new MapperList());
+        $statement->fetchAllIndexed();
+    }
 }
 
 final class SomeDummy
 {
     #[UniqueIdentifier]
     public ?int $id;
+    public string $field1;
+    public string $field2;
+}
+
+final class DummyWithoutId
+{
     public string $field1;
     public string $field2;
 }
