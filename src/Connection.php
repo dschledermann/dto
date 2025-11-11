@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dschledermann\Dto;
 
+use Dschledermann\Dto\Query\MakeBulkInsertTrait;
 use Dschledermann\Dto\Query\MakeCountByIdColumnTrait;
 use Dschledermann\Dto\Query\MakeInsertTrait;
 use Dschledermann\Dto\Query\MakeSelectOneTrait;
@@ -12,6 +13,7 @@ use PDO;
 
 class Connection
 {
+    use MakeBulkInsertTrait;
     use MakeCountByIdColumnTrait;
     use MakeInsertTrait;
     use MakeSelectOneTrait;
@@ -259,6 +261,75 @@ class Connection
             return $stmt->execute(array_values($values));
         }
 
+    }
+
+    /**
+     * Bulk insert an array of DTOs that are assumed to reflect a table.
+     * This has some limitations:
+     * - All DTO's have to be the same type.
+     * - Indexes are not considered, so if you provide a UUID and have that marked as
+     *   an index, then this is not preserved. I'm open to suggestions here.
+     *
+     * @template T
+     * @param T[]    $objs        List of objects
+     * @param int    $chunkSize   Maximum number of objects inserted in one statement.
+     */
+    public function insertBulk(array $objs, int $chunkSize = 200): void
+    {
+        if (!count($objs)) {
+            return;
+        }
+
+        // Sanity check of the array given...
+        $type = null;
+        foreach ($objs as $obj) {
+            // We can't accept things that are not objects.
+            if (!is_object($obj)) {
+                throw new DtoException("[Che7peixo] Element was not an object");
+            }
+
+            // If we have not registered the type, do that.
+            if (!$type) {
+                $type = get_class($obj);
+                continue;
+            }
+
+            // Check if the elements are all the same type
+            if ($type <> get_class($obj)) {
+                throw new DtoException(sprintf(
+                    "[iJeboo3oh] Differing types '%s' and '%s' given",
+                    $type,
+                    get_class($obj),
+                ));
+            }
+        }
+
+        $mapper = Mapper::create($type);
+        $uniqueField = $mapper->getUniqueField();
+
+        // Split it...
+        $chunks = array_chunk($objs, $chunkSize);
+        foreach ($chunks as $chunk) {
+            $values = [];
+            foreach ($chunk as $obj) {
+                $fields = $mapper->intoAssoc($obj);
+                if ($uniqueField) {
+                    unset($fields[$uniqueField]);
+                }
+
+                // Flatten all the values on each object into one line of arguments
+                $values = array_merge($values, array_values($fields));
+            }
+
+            // Make a query that fits the number of elements in the chunk.
+            $stmt = $this->prepare(
+                self::makeBulkInsertWithoutId($mapper, $this->sqlMode, count($chunk)),
+                $type,
+            );
+
+            // Insert the whole chunk
+            $stmt->execute($values);
+        }
     }
 
     /**

@@ -235,7 +235,8 @@ Your queries will be lean and your code will have fewer couplings.
 
 #### Q: Will there be a query builder?
 __A__: No. I consider query builders harmful.
-All the cases that can resonably be covered by simple query building is already implemented in the Connection::get() and Connection::persist() methods.
+All the cases that can resonably be covered by simple query building are already implemented in the Connection::get(), Connection::persist(), Connection::update(), Connection::insert() and Connection::insertBulk() methods.
+This covers anything that is simple and/or cumbersome to write.
 Anything more complex is bound to reduce readability.
 My position is that SQL is the best way to communicate with an SQL-database.
 If you need something complex, you are better served with writing the SQL directly and not using some OOP on top of SQL.

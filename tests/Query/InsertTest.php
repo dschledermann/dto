@@ -21,6 +21,11 @@ class InsertTest extends TestCase
             'INSERT INTO `insert_record` (`id`, `field1`, `field2`) VALUES (?, ?, ?)',
             self::makeInsertWithId($mapper, SqlMode::MySQL),
         );
+
+        $this->assertEquals(
+            'INSERT INTO `insert_record` (`field1`, `field2`) VALUES (?, ?)',            
+            self::makeInsertWithoutId($mapper, SqlMode::MySQL),
+        );
     }
 }
 

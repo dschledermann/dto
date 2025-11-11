@@ -260,6 +260,81 @@ class ConnectionTest extends TestCase
         $this->assertSame(123123, $obj->id);
     }
 
+    public function testInsertMultipleRecords(): void
+    {
+        $objs = [
+            new SomeSimpleType(null, "a", "b"),
+            new SomeSimpleType(null, "c", "d"),
+            new SomeSimpleType(null, "e", "f"),
+            new SomeSimpleType(null, "g", "h"),
+            new SomeSimpleType(null, "i", "j"),
+            new SomeSimpleType(null, "k", "l"),
+            new SomeSimpleType(null, "m", "n"),
+        ];
+
+        $pdoStatement = $this->createMock(PDOStatement::class);
+        $pdoStatement
+            ->expects($this->exactly(2))
+            ->method('execute');
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->expects($this->atMost(2))
+            ->method('prepare')
+            ->willReturn($pdoStatement);
+
+        $connection = Connection::createFromPdo($pdo);
+        $connection->insertBulk($objs, 6);
+        $this->assertTrue(true);
+    }
+
+    public function testEmptyBulkInsert(): void
+    {
+        $objs = [];
+
+        $pdoStatement = $this->createMock(PDOStatement::class);
+        $pdoStatement
+            ->expects($this->never())
+            ->method('execute');
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->expects($this->never())
+            ->method('prepare')
+            ->willReturn($pdoStatement);
+
+        $connection = Connection::createFromPdo($pdo);
+        $connection->insertBulk($objs, 666);
+        $this->assertTrue(true);
+    }
+
+    public function testNonObjectInBulkList(): void
+    {
+        $objs = [
+            new SomeSimpleType(null, "a", "b"),
+            12345,
+        ];
+
+        $this->expectExceptionMessage("[Che7peixo]");
+
+        $pdo = $this->createMock(PDO::class);
+        $connection = Connection::createFromPdo($pdo);
+        $connection->insertBulk($objs, 12);
+    }
+
+    public function testDifferentTypesInBulkList(): void
+    {
+        $objs = [
+            new SomeSimpleType(null, "a", "b"),
+            new TypeWithOutId("c", "d", "e", 4),
+        ];
+
+        $this->expectExceptionMessage("[iJeboo3oh]");
+        $pdo = $this->createMock(PDO::class);
+        $connection = Connection::createFromPdo($pdo);
+        $connection->insertBulk($objs, 12);
+    }
+
     public function testHealthyUpdate(): void
     {
         $obj = new SomeSimpleType(5, 'Laws', 'Of stupidity');
