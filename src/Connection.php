@@ -6,6 +6,7 @@ namespace Dschledermann\Dto;
 
 use Dschledermann\Dto\Query\MakeBulkInsertTrait;
 use Dschledermann\Dto\Query\MakeCountByIdColumnTrait;
+use Dschledermann\Dto\Query\MakeDeleteTrait;
 use Dschledermann\Dto\Query\MakeInsertTrait;
 use Dschledermann\Dto\Query\MakeSelectOneTrait;
 use Dschledermann\Dto\Query\MakeUpdateTrait;
@@ -15,6 +16,7 @@ class Connection
 {
     use MakeBulkInsertTrait;
     use MakeCountByIdColumnTrait;
+    use MakeDeleteTrait;
     use MakeInsertTrait;
     use MakeSelectOneTrait;
     use MakeUpdateTrait;
@@ -97,7 +99,10 @@ class Connection
      * @param class-string<T> $targetClass
      * @return Statement<T>
      */
-    public function query(string $sql, string $targetClass): Statement
+    public function query(
+        string $sql,
+        string $targetClass = Primitive::INTEGER,
+    ): Statement
     {
         $stmt = $this->prepare($sql, $targetClass);
         $stmt->execute([]);
@@ -112,7 +117,10 @@ class Connection
      * @param class-string<T> $targetClass
      * @return Statement<T>
      */
-    public function prepare(string $sql, string $targetClass): Statement
+    public function prepare(
+        string $sql,
+        string $targetClass = Primitive::INTEGER,
+    ): Statement
     {
         $key = md5($targetClass . $sql);
 
@@ -133,7 +141,7 @@ class Connection
      * Run a trivial SELECT query getting a DTO by its unique identifier.
      *
      * @template T
-     * @param mixed $id             Unique id for record
+     * @param mixed $id                       Unique id for record
      * @param class-string<T> $targetClass    Mapped onto this class
      * @return Statement<T>
      */
@@ -144,6 +152,87 @@ class Connection
         $stmt = $this->prepare($sql, $targetClass);
         $stmt->execute([$id]);
         return $stmt;
+    }
+
+    /**
+     * Run a trivial SELECT query getting all DTOs of a given type.
+     *
+     * @template T
+     * @param class-string<T> $targetClass    Mapped onto this class
+     * @return Statement<T>
+     */
+    public function getAll(string $targetClass): Statement
+    {
+        $mapper = $this->mapperList->getMapper($targetClass);
+        return $this->query(
+            sprintf(
+                'SELECT * FROM %s',
+                $this->sqlMode->quoteName($mapper->getTableName()),
+            ),
+            $targetClass,
+        );
+    }
+
+    /**
+     * Run a trivial DELETE query purging a DTO by its unique identifier.
+     *
+     * @template T
+     * @param    T            $obj
+     * @return   bool
+     */
+    public function delete(object $obj): bool
+    {
+        /** @var class-string<T> */
+        $className = get_class($obj);
+        $mapper = $this->mapperList->getMapper($className);
+
+        $idField = $mapper->getUniqueField();
+
+        if (is_null($idField)) {
+            throw new DtoException(sprintf(
+                "[Joh9shooz] %s does not have a unique field. Cannot use delete()",
+                $mapper->getTableName(),
+            ));
+        }
+
+        $id = $mapper->getUniqueValue($obj);
+
+        if (is_null($id)) {
+            throw new DtoException(sprintf(
+                '[phe4EMahv] Cannot delete as the "%s::%s" field is null',
+                $className,
+                $idField,
+            ));
+        }
+
+        $sql = self::makeDelete($mapper, $this->sqlMode);
+        $stmt = $this->prepare($sql, $className);
+        return $stmt->execute([$id]);
+    }
+
+    /**
+     * Run a trivial DELETE query purging by unique id and DTO type.
+     *
+     * @template T
+     * @param mixed           $id             Unique id for record
+     * @param class-string<T> $targetClass    Mapped onto this class
+     * @return   bool
+     */
+    public function deleteById(mixed $id, string $targetClass): bool
+    {
+        $mapper = $this->mapperList->getMapper($targetClass);
+        $idField = $mapper->getUniqueField();
+
+        if (is_null($idField)) {
+            throw new DtoException(sprintf(
+                "[aJ3ahH7th] %s does not have a unique field. Cannot use deleteById()",
+                $mapper->getTableName(),
+            ));
+        }
+
+        $sql = self::makeDelete($mapper, $this->sqlMode);
+        $stmt = $this->prepare($sql, $targetClass);
+        return $stmt->execute([$id]);
     }
 
     /**

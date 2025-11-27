@@ -89,6 +89,73 @@ class ConnectionTest extends TestCase
         $this->assertInstanceOf(SomeSimpleType::class, $objs[1]);
     }
 
+    public function testDeleteHappy(): void
+    {
+        $pdoStatement = $this->createMock(PDOStatement::class);
+        $pdoStatement
+            ->method("execute")
+            ->with([123])
+            ->willReturn(true);
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->method('prepare')
+            ->with('DELETE FROM `some_simple_type` WHERE `id` = ?')
+            ->willReturn($pdoStatement);
+
+        $connection = Connection::createFromPdo($pdo);
+
+        $obj = new SomeSimpleType(123, "going", "gone");
+
+        $connection->delete($obj);
+        $this->assertTrue(true);
+    }
+
+    public function testDeleteWithoutIdOnObj(): void
+    {
+        $this->expectExceptionMessage("[phe4EMahv]");
+        $pdo = $this->createMock(PDO::class);
+        $connection = Connection::createFromPdo($pdo);
+        $obj = new SomeSimpleType(null, "some", "field");
+        $connection->delete($obj);
+    }
+
+    public function testDeleteWithoutIdOnType(): void
+    {
+        $this->expectExceptionMessage("[Joh9shooz]");
+        $pdo = $this->createMock(PDO::class);
+        $connection = Connection::createFromPdo($pdo);
+        $obj = new TypeWithOutId("12", "aabb", "meme", 4);
+        $connection->delete($obj);
+    }
+
+    public function testDeleteByIdHappy(): void
+    {
+        $pdoStatement = $this->createMock(PDOStatement::class);
+        $pdoStatement
+            ->method("execute")
+            ->with([123])
+            ->willReturn(true);
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->method('prepare')
+            ->with('DELETE FROM `some_simple_type` WHERE `id` = ?')
+            ->willReturn($pdoStatement);
+
+        $connection = Connection::createFromPdo($pdo);
+        $connection->deleteById(123, SomeSimpleType::class);
+        $this->assertTrue(true);
+    }
+
+    public function testDeleteByIdWithoutIdOnType(): void
+    {
+        $this->expectExceptionMessage("[aJ3ahH7th]");
+        $pdo = $this->createMock(PDO::class);
+        $connection = Connection::createFromPdo($pdo);
+        $connection->deleteById(123, TypeWithOutId::class);
+    }
+
     public function testRunGet(): void
     {
         $pdoStatement = $this->createMock(PDOStatement::class);
@@ -117,6 +184,39 @@ class ConnectionTest extends TestCase
         $this->assertInstanceOf(SomeSimpleType::class, $obj);
         $this->assertSame(123, $obj->id);
         $this->assertSame("Hej, hej, Martin og Ketil", $obj->field1);
+    }
+
+    public function testRunGetAll(): void
+    {
+        $pdoStatement = $this->createMock(PDOStatement::class);
+        $pdoStatement
+            ->method("execute")
+            ->with([])
+            ->willReturn(true);
+
+        $pdoStatement
+            ->method("fetch")
+            ->willReturn(
+                ['id' => 1, 'field1' => "a", 'field2' => 'b'],
+                ['id' => 2, 'field1' => "c", 'field2' => 'd'],
+                null,
+            );
+
+        $pdo = $this->createMock(PDO::class);
+        $pdo
+            ->method('prepare')
+            ->with("SELECT * FROM `some_simple_type`")
+            ->willReturn($pdoStatement);
+
+        $connection = Connection::createFromPdo($pdo);
+        $stmt = $connection->getAll(SomeSimpleType::class);
+        $obj1 = $stmt->fetch();
+        $this->assertInstanceOf(SomeSimpleType::class, $obj1);
+        $this->assertSame("a", $obj1->field1);
+        $obj2 = $stmt->fetch();
+        $this->assertInstanceOf(SomeSimpleType::class, $obj2);
+        $this->assertSame("d", $obj2->field2);
+        $this->assertNull($stmt->fetch());
     }
 
     public function testPersistWithId(): void
