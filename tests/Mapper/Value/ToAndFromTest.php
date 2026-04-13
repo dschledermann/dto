@@ -79,7 +79,7 @@ final class ToAndFromTest extends TestCase
         ];
         $obj = $mapper->fromAssoc($arr);
         $this->assertEquals('94.12.11.155', $obj->ipAddress);
-        $this->assertEquals(DateTimeImmutable::createFromTimestamp(1776082703), $obj->dateField);
+        $this->assertEquals((new DateTimeImmutable())->setTimestamp(1776082703), $obj->dateField);
     }
 
     public function testNullablesIntoValues(): void
@@ -92,7 +92,7 @@ final class ToAndFromTest extends TestCase
         $this->assertSame(324324, $assoc['other']);
 
         $obj = new TypeWithNullableFields(
-            DateTimeImmutable::createFromTimestamp(1776075773),
+            (new DateTimeImmutable())->setTimestamp(1776075773),
             '87.22.124.244',
             311676,
         );
