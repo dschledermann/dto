@@ -62,6 +62,44 @@ final class ToAndFromTest extends TestCase
         $this->assertSame('["abe","snot"]', $arr['list_of_strings']);
         $this->assertSame("Make types great again", $arr['special_value']);
     }
+
+    public function testNullablesFromValues(): void
+    {
+        $arr = ['other' => '123'];
+        $mapper = Mapper::create(TypeWithNullableFields::class);
+        $obj = $mapper->fromAssoc($arr);
+        $this->assertNull($obj->ipAddress);
+        $this->assertNull($obj->dateField);
+        $this->assertSame(123, $obj->other);
+
+        $arr = [
+            'other' => 123,
+            'ip_address' => '1577847707',
+            'date_field' => '2026-04-13 12:18:23',
+        ];
+        $obj = $mapper->fromAssoc($arr);
+        $this->assertEquals('94.12.11.155', $obj->ipAddress);
+        $this->assertEquals(DateTimeImmutable::createFromTimestamp(1776082703), $obj->dateField);
+    }
+
+    public function testNullablesIntoValues(): void
+    {
+        $obj = new TypeWithNullableFields(null, null, 324324);
+        $mapper = Mapper::create(TypeWithNullableFields::class);
+        $assoc = $mapper->intoAssoc($obj);
+        $this->assertNull($assoc['date_field']);
+        $this->assertNull($assoc['ip_address']);
+        $this->assertSame(324324, $assoc['other']);
+
+        $obj = new TypeWithNullableFields(
+            DateTimeImmutable::createFromTimestamp(1776075773),
+            '87.22.124.244',
+            311676,
+        );
+        $assoc = $mapper->intoAssoc($obj);
+        $this->assertSame('2026-04-13 10:22:53', $assoc['date_field']);
+        $this->assertSame(1461091572, $assoc['ip_address']);
+    }
 }
 
 final class TypeWithDateAndIpField
@@ -76,6 +114,17 @@ final class TypeWithDateAndIpField
     #[FromToString, IntoViaConstructorParam(SpecialType::class)]
     public SpecialType $specialValue;
 
+}
+
+final class TypeWithNullableFields
+{
+    public function __construct(
+        #[CastDateTimeImmutable]
+        public ?DateTimeImmutable $dateField = null,
+        #[CastIp2Long]
+        public ?string $ipAddress = null,
+        public int $other,
+    ) {}
 }
 
 final class SpecialType implements Stringable

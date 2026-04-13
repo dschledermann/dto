@@ -15,6 +15,10 @@ final class FromToString implements FromPhpInterface
 {
     public function fromPhpValue(mixed $value): mixed
     {
-        return $value->__toString();
+        if (!is_null($value)) {
+            return $value->__toString();
+        } else {
+            return null;
+        }
     }
 }

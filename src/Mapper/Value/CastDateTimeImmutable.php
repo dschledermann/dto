@@ -16,12 +16,19 @@ final class CastDateTimeImmutable implements FromPhpInterface, IntoPhpInterface
 {
     public function fromPhpValue(mixed $value): mixed
     {
-        /** @var DateTimeImmutable */
-        return $value->format('Y-m-d H:i:s');
+        if (is_a($value, DateTimeImmutable::class)) {
+            return $value->format('Y-m-d H:i:s');
+        } else {
+            return null;
+        }
     }
 
-    public function intoPhpValue($mixed): mixed
+    public function intoPhpValue($value): mixed
     {
-        return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $mixed);
+        if (!is_null($value)) {
+            return DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $value);
+        } else {
+            return null;
+        }
     }
 }

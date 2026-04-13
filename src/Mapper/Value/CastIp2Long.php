@@ -15,11 +15,19 @@ final class CastIp2Long implements FromPhpInterface, IntoPhpInterface
 {
     public function fromPhpValue(mixed $value): mixed
     {
-        return ip2long($value);
+        if (!is_null($value)) {
+            return ip2long($value);
+        } else {
+            return null;
+        }
     }
 
     public function intoPhpValue(mixed $value): mixed
     {
-        return long2ip((int)$value);
+        if (!is_null($value)) {
+            return long2ip((int)$value);
+        } else {
+            return null;
+        }
     }
 }
